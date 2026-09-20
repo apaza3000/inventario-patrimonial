@@ -1,6 +1,11 @@
 <?php
 
 use App\Http\Controllers\BienController;
+use App\Http\Controllers\CondicionBienController;
+use App\Http\Controllers\EspecialidadController;
+use App\Http\Controllers\EstadoBienController;
+use App\Http\Controllers\SedeController;
+use App\Http\Controllers\TipoAmbienteController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,3 +26,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::get('/bienes', [BienController::class, 'index']);
 Route::get('/bienes/{id}', [BienController::class, 'show'])->whereNumber('id');
+
+Route::apiResource('sedes', SedeController::class)->parameter('sedes', 'id')->whereNumber('id');
+Route::apiResource('tipos-ambiente', TipoAmbienteController::class)->parameter('tipos-ambiente', 'id')->whereNumber('id');
+Route::apiResource('especialidades', EspecialidadController::class)->parameter('especialidades', 'id')->whereNumber('id');
+Route::apiResource('estados-bien', EstadoBienController::class)->parameter('estados-bien', 'id')->whereNumber('id');
+Route::apiResource('condiciones-bien', CondicionBienController::class)->parameter('condiciones-bien', 'id')->whereNumber('id');
