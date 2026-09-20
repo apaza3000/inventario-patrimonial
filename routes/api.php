@@ -8,6 +8,7 @@ use App\Http\Controllers\EquipoComputoController;
 use App\Http\Controllers\EspecialidadController;
 use App\Http\Controllers\EstadoBienController;
 use App\Http\Controllers\InventarioController;
+use App\Http\Controllers\MantenimientoController;
 use App\Http\Controllers\MuebleController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\SedeController;
@@ -55,3 +56,7 @@ Route::match(['put', 'patch'], '/inventarios/{bien_id}/{anio}', [InventarioContr
     ->where(['bien_id' => '[0-9]{1,10}', 'anio' => '-?[0-9]{1,10}']);
 Route::delete('/inventarios/{bien_id}/{anio}', [InventarioController::class, 'destroy'])
     ->where(['bien_id' => '[0-9]{1,10}', 'anio' => '-?[0-9]{1,10}']);
+
+Route::apiResource('mantenimientos', MantenimientoController::class)
+    ->parameter('mantenimientos', 'id')
+    ->where(['id' => '[0-9]{1,10}']);
