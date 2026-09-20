@@ -3,8 +3,10 @@
 use App\Http\Controllers\AmbienteController;
 use App\Http\Controllers\BienController;
 use App\Http\Controllers\CondicionBienController;
+use App\Http\Controllers\EquipoController;
 use App\Http\Controllers\EspecialidadController;
 use App\Http\Controllers\EstadoBienController;
+use App\Http\Controllers\MuebleController;
 use App\Http\Controllers\SedeController;
 use App\Http\Controllers\TipoAmbienteController;
 use Illuminate\Http\Request;
@@ -37,3 +39,5 @@ Route::apiResource('especialidades', EspecialidadController::class)->parameter('
 Route::apiResource('estados-bien', EstadoBienController::class)->parameter('estados-bien', 'id')->whereNumber('id');
 Route::apiResource('condiciones-bien', CondicionBienController::class)->parameter('condiciones-bien', 'id')->whereNumber('id');
 Route::apiResource('ambientes', AmbienteController::class)->parameter('ambientes', 'id')->whereNumber('id');
+Route::apiResource('muebles', MuebleController::class)->parameter('muebles', 'bien_id')->where(['bien_id' => '[0-9]{1,10}']);
+Route::apiResource('equipos', EquipoController::class)->parameter('equipos', 'bien_id')->where(['bien_id' => '[0-9]{1,10}']);
