@@ -7,6 +7,7 @@ use App\Http\Controllers\EquipoController;
 use App\Http\Controllers\EquipoComputoController;
 use App\Http\Controllers\EspecialidadController;
 use App\Http\Controllers\EstadoBienController;
+use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\MuebleController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\SedeController;
@@ -45,3 +46,12 @@ Route::apiResource('muebles', MuebleController::class)->parameter('muebles', 'bi
 Route::apiResource('equipos', EquipoController::class)->parameter('equipos', 'bien_id')->where(['bien_id' => '[0-9]{1,10}']);
 Route::apiResource('equipos-computo', EquipoComputoController::class)->parameter('equipos-computo', 'bien_id')->where(['bien_id' => '[0-9]{1,10}']);
 Route::apiResource('monitores', MonitorController::class)->parameter('monitores', 'bien_id')->where(['bien_id' => '[0-9]{1,10}']);
+
+Route::get('/inventarios', [InventarioController::class, 'index']);
+Route::get('/inventarios/{bien_id}/{anio}', [InventarioController::class, 'show'])
+    ->where(['bien_id' => '[0-9]{1,10}', 'anio' => '-?[0-9]{1,10}']);
+Route::post('/inventarios', [InventarioController::class, 'store']);
+Route::match(['put', 'patch'], '/inventarios/{bien_id}/{anio}', [InventarioController::class, 'update'])
+    ->where(['bien_id' => '[0-9]{1,10}', 'anio' => '-?[0-9]{1,10}']);
+Route::delete('/inventarios/{bien_id}/{anio}', [InventarioController::class, 'destroy'])
+    ->where(['bien_id' => '[0-9]{1,10}', 'anio' => '-?[0-9]{1,10}']);
