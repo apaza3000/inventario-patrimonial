@@ -26,7 +26,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::get('/bienes', [BienController::class, 'index']);
-Route::get('/bienes/{id}', [BienController::class, 'show'])->whereNumber('id');
+Route::get('/bienes/{id}', [BienController::class, 'show'])->where('id', '[0-9]{1,10}');
+Route::post('/bienes', [BienController::class, 'store']);
+Route::match(['put', 'patch'], '/bienes/{id}', [BienController::class, 'update'])->where('id', '[0-9]{1,10}');
+Route::delete('/bienes/{id}', [BienController::class, 'destroy'])->where('id', '[0-9]{1,10}');
 
 Route::apiResource('sedes', SedeController::class)->parameter('sedes', 'id')->whereNumber('id');
 Route::apiResource('tipos-ambiente', TipoAmbienteController::class)->parameter('tipos-ambiente', 'id')->whereNumber('id');
