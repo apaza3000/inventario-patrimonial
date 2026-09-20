@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AmbienteController;
 use App\Http\Controllers\BienController;
 use App\Http\Controllers\CondicionBienController;
 use App\Http\Controllers\EspecialidadController;
@@ -32,3 +33,4 @@ Route::apiResource('tipos-ambiente', TipoAmbienteController::class)->parameter('
 Route::apiResource('especialidades', EspecialidadController::class)->parameter('especialidades', 'id')->whereNumber('id');
 Route::apiResource('estados-bien', EstadoBienController::class)->parameter('estados-bien', 'id')->whereNumber('id');
 Route::apiResource('condiciones-bien', CondicionBienController::class)->parameter('condiciones-bien', 'id')->whereNumber('id');
+Route::apiResource('ambientes', AmbienteController::class)->parameter('ambientes', 'id')->whereNumber('id');
