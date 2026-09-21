@@ -20,7 +20,7 @@ class ApiSessionAuthTest extends TestCase
             'apellidos' => 'Autenticación',
             'correo' => uniqid('auth-prueba-', true).'@example.test',
             'password_hash' => Hash::make('ClaveSegura123!'),
-            'rol_id' => Rol::query()->firstOrFail()->id,
+            'rol_id' => Rol::query()->where('nombre', 'superadmin')->firstOrFail()->id,
             'activo' => $activo,
             'fecha_registro' => now(),
         ]);

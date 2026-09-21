@@ -11,6 +11,14 @@ use Illuminate\Validation\Rule;
 
 class RolController extends Controller
 {
+    private const RESERVED_NAMES = [
+        'superadmin',
+        'administrador',
+        'coordinador',
+        'director',
+        'asistente',
+    ];
+
     public function index(): JsonResponse
     {
         return response()->json(Rol::orderBy('id')->paginate(15));
@@ -59,6 +67,12 @@ class RolController extends Controller
             return $this->notFound();
         }
 
+        if ($this->isReserved($rol)
+            && $request->exists('nombre')
+            && $request->input('nombre') !== $rol->nombre) {
+            return $this->reservedName();
+        }
+
         $data = $this->validatedData($request, $id);
 
         if ($data instanceof JsonResponse) {
@@ -87,6 +101,12 @@ class RolController extends Controller
 
         if ($rol === null) {
             return $this->notFound();
+        }
+
+        if ($this->isReserved($rol)) {
+            return response()->json([
+                'message' => 'No se puede eliminar un rol reservado del sistema.',
+            ], 409);
         }
 
         if ($rol->usuarios()->exists()) {
@@ -141,5 +161,20 @@ class RolController extends Controller
     private function inUse(): JsonResponse
     {
         return response()->json(['message' => 'No se puede eliminar el rol porque tiene usuarios asociados.'], 409);
+    }
+
+    private function isReserved(Rol $rol): bool
+    {
+        return in_array($rol->nombre, self::RESERVED_NAMES, true);
+    }
+
+    private function reservedName(): JsonResponse
+    {
+        return response()->json([
+            'message' => 'Los datos enviados no son válidos.',
+            'errors' => [
+                'nombre' => ['No se puede cambiar el nombre de un rol reservado del sistema.'],
+            ],
+        ], 422);
     }
 }

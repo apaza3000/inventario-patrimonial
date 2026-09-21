@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Ambiente;
 use App\Models\Bien;
 use App\Models\Movimiento;
+use App\Models\Usuario;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,6 +15,26 @@ use Illuminate\Support\Facades\Validator;
 class MovimientoController extends Controller
 {
     private const RELATIONS = ['bien', 'ambienteOrigen', 'ambienteDestino', 'ordenadoPor', 'ejecutadoPor'];
+
+    public function opciones(): JsonResponse
+    {
+        return response()->json([
+            'data' => [
+                'bienes' => Bien::query()
+                    ->orderBy('id')
+                    ->get(['id', 'cbi', 'descripcion', 'ambiente_id']),
+                'ambientes' => Ambiente::query()
+                    ->where('activo', true)
+                    ->orderBy('id')
+                    ->get(['id', 'nombre', 'sede_id']),
+                'responsables' => Usuario::query()
+                    ->where('activo', true)
+                    ->orderBy('apellidos')
+                    ->orderBy('nombres')
+                    ->get(['id', 'nombres', 'apellidos']),
+            ],
+        ]);
+    }
 
     public function index(): JsonResponse
     {

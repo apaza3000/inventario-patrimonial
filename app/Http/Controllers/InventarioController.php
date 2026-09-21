@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Inventario;
 use Illuminate\Database\QueryException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -11,19 +12,22 @@ use Illuminate\Support\Facades\Validator;
 
 class InventarioController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         return response()->json(
-            Inventario::with('bien')
+            $this->queryFor($request)
                 ->orderBy('bien_id')
                 ->orderBy('anio')
                 ->paginate(15)
         );
     }
 
-    public function show(int $bien_id, int $anio): JsonResponse
+    public function show(Request $request, int $bien_id, int $anio): JsonResponse
     {
-        $inventario = $this->findInventario($bien_id, $anio);
+        $inventario = $this->queryFor($request)
+            ->where('bien_id', $bien_id)
+            ->where('anio', $anio)
+            ->first();
 
         if ($inventario === null) {
             return $this->notFound();
@@ -122,6 +126,19 @@ class InventarioController extends Controller
             ->where('bien_id', $bien_id)
             ->where('anio', $anio)
             ->first();
+    }
+
+    private function queryFor(Request $request): Builder
+    {
+        $query = Inventario::with('bien');
+
+        if ($request->user('web')?->rol?->nombre === 'asistente') {
+            $query->whereHas('bien.ambiente.tipoAmbiente', function (Builder $query) {
+                $query->where('nombre', 'LABORATORIO');
+            });
+        }
+
+        return $query;
     }
 
     private function validatedData(Request $request, bool $updating = false): array|JsonResponse
