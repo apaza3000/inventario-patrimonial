@@ -14,8 +14,10 @@ use App\Http\Controllers\MantenimientoController;
 use App\Http\Controllers\MovimientoController;
 use App\Http\Controllers\MuebleController;
 use App\Http\Controllers\MonitorController;
+use App\Http\Controllers\RolController;
 use App\Http\Controllers\SedeController;
 use App\Http\Controllers\TipoAmbienteController;
+use App\Http\Controllers\UsuarioController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -74,4 +76,12 @@ Route::apiResource('estaciones-pc', EstacionPcController::class)
 Route::apiResource('estacion-componentes', EstacionComponenteController::class)
     ->except('destroy')
     ->parameter('estacion-componentes', 'id')
+    ->where(['id' => '[0-9]{1,10}']);
+
+Route::apiResource('roles', RolController::class)
+    ->parameter('roles', 'id')
+    ->where(['id' => '[0-9]{1,10}']);
+Route::apiResource('usuarios', UsuarioController::class)
+    ->except('destroy')
+    ->parameter('usuarios', 'id')
     ->where(['id' => '[0-9]{1,10}']);
