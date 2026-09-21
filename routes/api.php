@@ -5,6 +5,8 @@ use App\Http\Controllers\BienController;
 use App\Http\Controllers\CondicionBienController;
 use App\Http\Controllers\EquipoController;
 use App\Http\Controllers\EquipoComputoController;
+use App\Http\Controllers\EstacionComponenteController;
+use App\Http\Controllers\EstacionPcController;
 use App\Http\Controllers\EspecialidadController;
 use App\Http\Controllers\EstadoBienController;
 use App\Http\Controllers\InventarioController;
@@ -65,3 +67,11 @@ Route::apiResource('mantenimientos', MantenimientoController::class)
 Route::get('/movimientos', [MovimientoController::class, 'index']);
 Route::get('/movimientos/{id}', [MovimientoController::class, 'show'])->where('id', '[0-9]{1,10}');
 Route::post('/movimientos', [MovimientoController::class, 'store']);
+
+Route::apiResource('estaciones-pc', EstacionPcController::class)
+    ->parameter('estaciones-pc', 'id')
+    ->where(['id' => '[0-9]{1,10}']);
+Route::apiResource('estacion-componentes', EstacionComponenteController::class)
+    ->except('destroy')
+    ->parameter('estacion-componentes', 'id')
+    ->where(['id' => '[0-9]{1,10}']);
