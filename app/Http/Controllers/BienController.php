@@ -126,6 +126,13 @@ class BienController extends Controller
 
     private function validatedData(Request $request, ?int $id = null): array|JsonResponse
     {
+        if ($id !== null && array_key_exists('ambiente_id', $request->all())) {
+            return response()->json([
+                'message' => 'Los datos enviados no son válidos.',
+                'errors' => ['ambiente_id' => ['La ubicación de un bien solo puede cambiarse mediante movimientos.']],
+            ], 422);
+        }
+
         $required = $id === null ? 'required' : 'sometimes';
 
         $validator = Validator::make($request->all(), [

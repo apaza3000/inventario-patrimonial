@@ -9,6 +9,7 @@ use App\Http\Controllers\EspecialidadController;
 use App\Http\Controllers\EstadoBienController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\MantenimientoController;
+use App\Http\Controllers\MovimientoController;
 use App\Http\Controllers\MuebleController;
 use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\SedeController;
@@ -60,3 +61,7 @@ Route::delete('/inventarios/{bien_id}/{anio}', [InventarioController::class, 'de
 Route::apiResource('mantenimientos', MantenimientoController::class)
     ->parameter('mantenimientos', 'id')
     ->where(['id' => '[0-9]{1,10}']);
+
+Route::get('/movimientos', [MovimientoController::class, 'index']);
+Route::get('/movimientos/{id}', [MovimientoController::class, 'show'])->where('id', '[0-9]{1,10}');
+Route::post('/movimientos', [MovimientoController::class, 'store']);
