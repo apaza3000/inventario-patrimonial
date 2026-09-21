@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Usuario extends Model
+class Usuario extends Authenticatable
 {
     protected $table = 'usuarios';
+
+    protected $rememberTokenName = null;
 
     public $timestamps = false;
 
@@ -27,6 +29,11 @@ class Usuario extends Model
         'activo' => 'boolean',
         'fecha_registro' => 'datetime',
     ];
+
+    public function getAuthPassword(): string
+    {
+        return $this->password_hash;
+    }
 
     public function rol(): BelongsTo
     {
