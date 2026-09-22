@@ -44,6 +44,14 @@ Route::middleware(['auth:web', 'usuario.activo'])->group(function () {
             ->where(['bien_id' => '[0-9]{1,10}', 'anio' => '-?[0-9]{1,10}']);
         Route::get('/movimientos/opciones', [MovimientoController::class, 'opciones']);
         Route::post('/movimientos', [MovimientoController::class, 'store']);
+        Route::get('/movimientos/{id}', [MovimientoController::class, 'show'])
+            ->where('id', '[0-9]{1,10}');
+        Route::get('/movimientos/{id}/pdf-generado', [MovimientoController::class, 'downloadGenerated'])
+            ->where('id', '[0-9]{1,10}');
+        Route::post('/movimientos/{id}/pdf-firmado', [MovimientoController::class, 'uploadSigned'])
+            ->where('id', '[0-9]{1,10}');
+        Route::get('/movimientos/{id}/pdf-firmado', [MovimientoController::class, 'downloadSigned'])
+            ->where('id', '[0-9]{1,10}');
     });
 
     Route::middleware('rol:superadmin')->group(function () {
@@ -75,7 +83,6 @@ Route::middleware(['auth:web', 'usuario.activo'])->group(function () {
             ->where(['id' => '[0-9]{1,10}']);
 
         Route::get('/movimientos', [MovimientoController::class, 'index']);
-        Route::get('/movimientos/{id}', [MovimientoController::class, 'show'])->where('id', '[0-9]{1,10}');
 
         Route::apiResource('estaciones-pc', EstacionPcController::class)
             ->parameter('estaciones-pc', 'id')

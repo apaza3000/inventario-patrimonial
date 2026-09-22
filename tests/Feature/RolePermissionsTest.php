@@ -9,11 +9,23 @@ use App\Models\Usuario;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class RolePermissionsTest extends TestCase
 {
     use DatabaseTransactions;
+
+    private bool $usesFakeLocalStorage = false;
+
+    protected function tearDown(): void
+    {
+        if ($this->usesFakeLocalStorage) {
+            Storage::disk('local')->deleteDirectory('movimientos');
+        }
+
+        parent::tearDown();
+    }
 
     private function createUsuario(string $rol): Usuario
     {
@@ -83,7 +95,11 @@ class RolePermissionsTest extends TestCase
 
     public function test_asistente_can_read_minimal_movement_options_and_register_a_movement(): void
     {
+        $this->usesFakeLocalStorage = true;
+        Storage::fake('local');
+
         $bien = Bien::query()->firstOrFail();
+        $ambienteOriginal = $bien->ambiente_id;
         $destino = Ambiente::query()
             ->where('activo', true)
             ->whereKeyNot($bien->ambiente_id)
@@ -108,9 +124,14 @@ class RolePermissionsTest extends TestCase
 
         $this->postJson('/api/movimientos', $payload)
             ->assertCreated()
-            ->assertJsonPath('data.bien_id', $bien->id);
-        $this->assertDatabaseHas('movimientos', ['bien_id' => $bien->id, 'motivo' => 'Prueba de permisos']);
-        $this->assertDatabaseHas('bienes', ['id' => $bien->id, 'ambiente_id' => $destino->id]);
+            ->assertJsonPath('data.bien_id', $bien->id)
+            ->assertJsonPath('data.estado', 'pendiente_firma');
+        $this->assertDatabaseHas('movimientos', [
+            'bien_id' => $bien->id,
+            'motivo' => 'Prueba de permisos',
+            'estado' => 'pendiente_firma',
+        ]);
+        $this->assertDatabaseHas('bienes', ['id' => $bien->id, 'ambiente_id' => $ambienteOriginal]);
     }
 
     public function test_asistente_cannot_access_roles_users_or_other_crud(): void

@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Movimiento extends Model
 {
+    public const ESTADO_PENDIENTE_FIRMA = 'pendiente_firma';
+
+    public const ESTADO_FINALIZADO = 'finalizado';
+
     protected $table = 'movimientos';
 
     public $timestamps = false;
@@ -20,9 +24,18 @@ class Movimiento extends Model
         'fecha_movimiento',
         'motivo',
         'observaciones',
+        'estado',
+        'pdf_generado_ruta',
+        'pdf_firmado_ruta',
+        'fecha_firma',
     ];
 
-    protected $casts = ['fecha_movimiento' => 'datetime'];
+    protected $hidden = ['pdf_generado_ruta', 'pdf_firmado_ruta'];
+
+    protected $casts = [
+        'fecha_movimiento' => 'datetime',
+        'fecha_firma' => 'datetime',
+    ];
 
     public function bien(): BelongsTo
     {
