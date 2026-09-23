@@ -81,12 +81,12 @@ Route::middleware(['auth:web', 'usuario.activo'])->group(function () {
         Route::match(['put', 'patch'], '/bienes/{id}', [BienController::class, 'update'])->where('id', '[0-9]{1,10}');
         Route::delete('/bienes/{id}', [BienController::class, 'destroy'])->where('id', '[0-9]{1,10}');
 
-        Route::apiResource('sedes', SedeController::class)->parameter('sedes', 'id')->whereNumber('id');
-        Route::apiResource('tipos-ambiente', TipoAmbienteController::class)->parameter('tipos-ambiente', 'id')->whereNumber('id');
-        Route::apiResource('especialidades', EspecialidadController::class)->parameter('especialidades', 'id')->whereNumber('id');
-        Route::apiResource('estados-bien', EstadoBienController::class)->parameter('estados-bien', 'id')->whereNumber('id');
-        Route::apiResource('condiciones-bien', CondicionBienController::class)->parameter('condiciones-bien', 'id')->whereNumber('id');
-        Route::apiResource('ambientes', AmbienteController::class)->parameter('ambientes', 'id')->whereNumber('id');
+        Route::apiResource('sedes', SedeController::class)->parameter('sedes', 'id')->where(['id' => '[0-9]{1,10}']);
+        Route::apiResource('tipos-ambiente', TipoAmbienteController::class)->parameter('tipos-ambiente', 'id')->where(['id' => '[0-9]{1,10}']);
+        Route::apiResource('especialidades', EspecialidadController::class)->parameter('especialidades', 'id')->where(['id' => '[0-9]{1,10}']);
+        Route::apiResource('estados-bien', EstadoBienController::class)->parameter('estados-bien', 'id')->where(['id' => '[0-9]{1,10}']);
+        Route::apiResource('condiciones-bien', CondicionBienController::class)->parameter('condiciones-bien', 'id')->where(['id' => '[0-9]{1,10}']);
+        Route::apiResource('ambientes', AmbienteController::class)->parameter('ambientes', 'id')->where(['id' => '[0-9]{1,10}']);
         Route::apiResource('muebles', MuebleController::class)->parameter('muebles', 'bien_id')->where(['bien_id' => '[0-9]{1,10}']);
         Route::post('/equipos', [EquipoController::class, 'store']);
         Route::match(['put', 'patch'], '/equipos/{bien_id}', [EquipoController::class, 'update'])
