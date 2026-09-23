@@ -19,6 +19,7 @@ class Usuario extends Authenticatable
         'correo',
         'password_hash',
         'rol_id',
+        'especialidad_id',
         'activo',
         'fecha_registro',
     ];
@@ -38,5 +39,10 @@ class Usuario extends Authenticatable
     public function rol(): BelongsTo
     {
         return $this->belongsTo(Rol::class, 'rol_id');
+    }
+
+    public function especialidad(): BelongsTo
+    {
+        return $this->belongsTo(Especialidad::class, 'especialidad_id');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Mantenimiento;
+use App\Services\AlcanceDatosService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -11,16 +12,25 @@ class MantenimientoController extends Controller
 {
     private const RELATIONS = ['bien', 'tipoMantenimiento', 'tecnico'];
 
-    public function index(): JsonResponse
+    public function __construct(private readonly AlcanceDatosService $alcance)
+    {
+    }
+
+    public function index(Request $request): JsonResponse
     {
         return response()->json(
-            Mantenimiento::with(self::RELATIONS)->orderBy('id')->paginate(15)
+            $this->alcance->mantenimientos($request->user('web'))
+                ->with(self::RELATIONS)
+                ->orderBy('id')
+                ->paginate(15)
         );
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
-        $mantenimiento = Mantenimiento::with(self::RELATIONS)->find($id);
+        $mantenimiento = $this->alcance->mantenimientos($request->user('web'))
+            ->with(self::RELATIONS)
+            ->find($id);
 
         if ($mantenimiento === null) {
             return $this->notFound();

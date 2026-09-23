@@ -142,25 +142,30 @@ class RolePermissionsTest extends TestCase
         $this->getJson('/api/movimientos')->assertForbidden();
     }
 
-    public function test_director_cannot_access_business_routes(): void
+    public function test_director_has_full_access_to_business_routes(): void
     {
-        $this->assertUnconfirmedRoleIsForbidden('director');
+        $this->assertFullAccessRole('director');
     }
 
-    public function test_coordinador_cannot_access_business_routes(): void
+    public function test_administrador_has_full_access_to_business_routes(): void
     {
-        $this->assertUnconfirmedRoleIsForbidden('coordinador');
+        $this->assertFullAccessRole('administrador');
     }
 
-    public function test_administrador_cannot_access_business_routes(): void
+    public function test_coordinador_only_reaches_read_routes(): void
     {
-        $this->assertUnconfirmedRoleIsForbidden('administrador');
+        $this->asRole('coordinador')->getJson('/api/equipos')->assertOk();
+        $this->getJson('/api/mantenimientos')->assertOk();
+        $this->getJson('/api/roles')->assertForbidden();
+        $this->postJson('/api/equipos', [])->assertForbidden();
     }
 
-    private function assertUnconfirmedRoleIsForbidden(string $rol): void
+    private function assertFullAccessRole(string $rol): void
     {
         $this->asRole($rol)->getJson('/api/user')->assertOk();
-        $this->getJson('/api/inventarios')->assertForbidden();
+        $this->getJson('/api/bienes')->assertOk();
+        $this->getJson('/api/roles')->assertOk();
+        $this->getJson('/api/usuarios')->assertOk();
     }
 
     public function test_guest_receives_json_unauthorized_response(): void

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Bien extends Model
 {
@@ -40,5 +42,15 @@ class Bien extends Model
     public function condicion(): BelongsTo
     {
         return $this->belongsTo(CondicionBien::class, 'condicion_id');
+    }
+
+    public function equipo(): HasOne
+    {
+        return $this->hasOne(Equipo::class, 'bien_id');
+    }
+
+    public function mantenimientos(): HasMany
+    {
+        return $this->hasMany(Mantenimiento::class, 'bien_id');
     }
 }

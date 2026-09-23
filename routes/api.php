@@ -15,6 +15,7 @@ use App\Http\Controllers\MantenimientoController;
 use App\Http\Controllers\MovimientoController;
 use App\Http\Controllers\MuebleController;
 use App\Http\Controllers\MonitorController;
+use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\SedeController;
 use App\Http\Controllers\TipoAmbienteController;
@@ -54,6 +55,25 @@ Route::middleware(['auth:web', 'usuario.activo'])->group(function () {
             ->where('id', '[0-9]{1,10}');
     });
 
+    Route::middleware('rol:coordinador')->group(function () {
+        Route::get('/equipos', [EquipoController::class, 'index']);
+        Route::get('/equipos/{bien_id}', [EquipoController::class, 'show'])
+            ->where('bien_id', '[0-9]{1,10}');
+        Route::get('/mantenimientos', [MantenimientoController::class, 'index']);
+        Route::get('/mantenimientos/{id}', [MantenimientoController::class, 'show'])
+            ->where('id', '[0-9]{1,10}');
+
+        Route::get('/reportes/equipos/pdf', [ReporteController::class, 'equiposPdf']);
+        Route::get('/reportes/equipos/excel', [ReporteController::class, 'equiposExcel']);
+        Route::get('/reportes/mantenimientos/pdf', [ReporteController::class, 'mantenimientosPdf']);
+        Route::get('/reportes/mantenimientos/excel', [ReporteController::class, 'mantenimientosExcel']);
+    });
+
+    Route::middleware('rol:asistente,coordinador')->group(function () {
+        Route::get('/reportes/inventario/pdf', [ReporteController::class, 'inventarioPdf']);
+        Route::get('/reportes/inventario/excel', [ReporteController::class, 'inventarioExcel']);
+    });
+
     Route::middleware('rol:superadmin')->group(function () {
         Route::get('/bienes', [BienController::class, 'index']);
         Route::get('/bienes/{id}', [BienController::class, 'show'])->where('id', '[0-9]{1,10}');
@@ -68,7 +88,11 @@ Route::middleware(['auth:web', 'usuario.activo'])->group(function () {
         Route::apiResource('condiciones-bien', CondicionBienController::class)->parameter('condiciones-bien', 'id')->whereNumber('id');
         Route::apiResource('ambientes', AmbienteController::class)->parameter('ambientes', 'id')->whereNumber('id');
         Route::apiResource('muebles', MuebleController::class)->parameter('muebles', 'bien_id')->where(['bien_id' => '[0-9]{1,10}']);
-        Route::apiResource('equipos', EquipoController::class)->parameter('equipos', 'bien_id')->where(['bien_id' => '[0-9]{1,10}']);
+        Route::post('/equipos', [EquipoController::class, 'store']);
+        Route::match(['put', 'patch'], '/equipos/{bien_id}', [EquipoController::class, 'update'])
+            ->where('bien_id', '[0-9]{1,10}');
+        Route::delete('/equipos/{bien_id}', [EquipoController::class, 'destroy'])
+            ->where('bien_id', '[0-9]{1,10}');
         Route::apiResource('equipos-computo', EquipoComputoController::class)->parameter('equipos-computo', 'bien_id')->where(['bien_id' => '[0-9]{1,10}']);
         Route::apiResource('monitores', MonitorController::class)->parameter('monitores', 'bien_id')->where(['bien_id' => '[0-9]{1,10}']);
 
@@ -78,9 +102,11 @@ Route::middleware(['auth:web', 'usuario.activo'])->group(function () {
         Route::delete('/inventarios/{bien_id}/{anio}', [InventarioController::class, 'destroy'])
             ->where(['bien_id' => '[0-9]{1,10}', 'anio' => '-?[0-9]{1,10}']);
 
-        Route::apiResource('mantenimientos', MantenimientoController::class)
-            ->parameter('mantenimientos', 'id')
-            ->where(['id' => '[0-9]{1,10}']);
+        Route::post('/mantenimientos', [MantenimientoController::class, 'store']);
+        Route::match(['put', 'patch'], '/mantenimientos/{id}', [MantenimientoController::class, 'update'])
+            ->where('id', '[0-9]{1,10}');
+        Route::delete('/mantenimientos/{id}', [MantenimientoController::class, 'destroy'])
+            ->where('id', '[0-9]{1,10}');
 
         Route::get('/movimientos', [MovimientoController::class, 'index']);
 

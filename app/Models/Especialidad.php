@@ -17,4 +17,9 @@ class Especialidad extends Model
     {
         return $this->hasMany(Ambiente::class, 'especialidad_id');
     }
+
+    public function usuarios(): HasMany
+    {
+        return $this->hasMany(Usuario::class, 'especialidad_id');
+    }
 }

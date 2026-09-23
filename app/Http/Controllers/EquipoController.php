@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bien;
 use App\Models\Equipo;
 use App\Models\Mueble;
+use App\Services\AlcanceDatosService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,18 +15,27 @@ use Illuminate\Validation\Rule;
 
 class EquipoController extends Controller
 {
-    private const RELATIONS = ['bien', 'tipoEquipo', 'marca', 'equipoComputo', 'monitor'];
+    private const RELATIONS = ['bien.ambiente.especialidad', 'tipoEquipo', 'marca', 'equipoComputo', 'monitor'];
 
-    public function index(): JsonResponse
+    public function __construct(private readonly AlcanceDatosService $alcance)
+    {
+    }
+
+    public function index(Request $request): JsonResponse
     {
         return response()->json(
-            Equipo::with(self::RELATIONS)->orderBy('bien_id')->paginate(15)
+            $this->alcance->equipos($request->user('web'))
+                ->with(self::RELATIONS)
+                ->orderBy('bien_id')
+                ->paginate(15)
         );
     }
 
-    public function show(int $bien_id): JsonResponse
+    public function show(Request $request, int $bien_id): JsonResponse
     {
-        $equipo = Equipo::with(self::RELATIONS)->find($bien_id);
+        $equipo = $this->alcance->equipos($request->user('web'))
+            ->with(self::RELATIONS)
+            ->find($bien_id);
 
         if ($equipo === null) {
             return $this->notFound();

@@ -39,7 +39,7 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Sesión iniciada correctamente.',
-            'data' => $request->user('web')->load('rol'),
+            'data' => $request->user('web')->load(['rol', 'especialidad']),
         ]);
     }
 
@@ -54,6 +54,6 @@ class AuthController extends Controller
 
     public function user(Request $request): JsonResponse
     {
-        return response()->json(['data' => $request->user('web')->load('rol')]);
+        return response()->json(['data' => $request->user('web')->load(['rol', 'especialidad'])]);
     }
 }

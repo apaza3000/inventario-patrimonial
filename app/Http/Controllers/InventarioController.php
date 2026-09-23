@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Inventario;
+use App\Services\AlcanceDatosService;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +13,10 @@ use Illuminate\Support\Facades\Validator;
 
 class InventarioController extends Controller
 {
+    public function __construct(private readonly AlcanceDatosService $alcance)
+    {
+    }
+
     public function index(Request $request): JsonResponse
     {
         return response()->json(
@@ -130,15 +135,7 @@ class InventarioController extends Controller
 
     private function queryFor(Request $request): Builder
     {
-        $query = Inventario::with('bien');
-
-        if ($request->user('web')?->rol?->nombre === 'asistente') {
-            $query->whereHas('bien.ambiente.tipoAmbiente', function (Builder $query) {
-                $query->where('nombre', 'LABORATORIO');
-            });
-        }
-
-        return $query;
+        return $this->alcance->inventarios($request->user('web'))->with('bien');
     }
 
     private function validatedData(Request $request, bool $updating = false): array|JsonResponse

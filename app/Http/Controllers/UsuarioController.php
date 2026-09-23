@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Rol;
 use App\Models\Usuario;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -12,14 +13,18 @@ use Illuminate\Validation\Rule;
 
 class UsuarioController extends Controller
 {
+    private const RELATIONS = ['rol', 'especialidad'];
+
+    private const ESPECIALIDADES_ACADEMICAS = [1, 2, 3];
+
     public function index(): JsonResponse
     {
-        return response()->json(Usuario::with('rol')->orderBy('id')->paginate(15));
+        return response()->json(Usuario::with(self::RELATIONS)->orderBy('id')->paginate(15));
     }
 
     public function show(int $id): JsonResponse
     {
-        $usuario = Usuario::with('rol')->find($id);
+        $usuario = Usuario::with(self::RELATIONS)->find($id);
 
         if ($usuario === null) {
             return $this->notFound();
@@ -48,7 +53,7 @@ class UsuarioController extends Controller
 
         return response()->json([
             'message' => 'Se creó el usuario correctamente.',
-            'data' => $usuario->refresh()->load('rol'),
+            'data' => $usuario->refresh()->load(self::RELATIONS),
         ], 201);
     }
 
@@ -60,7 +65,7 @@ class UsuarioController extends Controller
             return $this->notFound();
         }
 
-        $data = $this->validatedData($request, $id);
+        $data = $this->validatedData($request, $usuario);
 
         if ($data instanceof JsonResponse) {
             return $data;
@@ -79,11 +84,11 @@ class UsuarioController extends Controller
 
         return response()->json([
             'message' => 'Se actualizó el usuario correctamente.',
-            'data' => $usuario->refresh()->load('rol'),
+            'data' => $usuario->refresh()->load(self::RELATIONS),
         ]);
     }
 
-    private function validatedData(Request $request, ?int $id = null): array|JsonResponse
+    private function validatedData(Request $request, ?Usuario $usuario = null): array|JsonResponse
     {
         $serverFields = array_intersect_key($request->all(), array_flip(['password_hash', 'fecha_registro']));
 
@@ -100,14 +105,15 @@ class UsuarioController extends Controller
             ], 422);
         }
 
-        $required = $id === null ? ['required'] : ['sometimes', 'required'];
+        $required = $usuario === null ? ['required'] : ['sometimes', 'required'];
 
         $validator = Validator::make($request->all(), [
             'nombres' => [...$required, 'string', 'max:100'],
             'apellidos' => [...$required, 'string', 'max:100'],
-            'correo' => [...$required, 'email', 'max:120', Rule::unique('usuarios', 'correo')->ignore($id)],
+            'correo' => [...$required, 'email', 'max:120', Rule::unique('usuarios', 'correo')->ignore($usuario?->id)],
             'password' => [...$required, 'string', 'min:8', 'max:72'],
             'rol_id' => [...$required, 'integer', 'between:1,2147483647', 'exists:roles,id'],
+            'especialidad_id' => ['sometimes', 'nullable', 'integer', 'between:1,2147483647', 'exists:especialidades,id'],
             'activo' => ['sometimes', 'required', 'boolean'],
         ]);
 
@@ -118,7 +124,37 @@ class UsuarioController extends Controller
             ], 422);
         }
 
-        return $validator->validated();
+        $data = $validator->validated();
+        $rolId = $data['rol_id'] ?? $usuario?->rol_id;
+        $rol = Rol::query()->find($rolId);
+
+        if ($rol?->nombre === 'coordinador') {
+            $especialidadId = array_key_exists('especialidad_id', $data)
+                ? $data['especialidad_id']
+                : $usuario?->especialidad_id;
+
+            if ($especialidadId === null) {
+                return response()->json([
+                    'message' => 'Los datos enviados no son válidos.',
+                    'errors' => [
+                        'especialidad_id' => ['La especialidad es obligatoria para los usuarios coordinadores.'],
+                    ],
+                ], 422);
+            }
+
+            if (! in_array($especialidadId, self::ESPECIALIDADES_ACADEMICAS, true)) {
+                return response()->json([
+                    'message' => 'Los datos enviados no son válidos.',
+                    'errors' => [
+                        'especialidad_id' => ['La especialidad seleccionada no corresponde a una carrera académica.'],
+                    ],
+                ], 422);
+            }
+        } else {
+            $data['especialidad_id'] = null;
+        }
+
+        return $data;
     }
 
     private function writeError(QueryException $exception): JsonResponse
