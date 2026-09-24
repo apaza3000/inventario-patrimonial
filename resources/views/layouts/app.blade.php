@@ -9,11 +9,11 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body>
+<body class="app-body">
 
 <div class="app-container">
 
-    <aside class="sidebar">
+    <aside class="sidebar" aria-label="Navegación principal">
 
         <div class="sidebar-header">
             <div class="logo-box">
@@ -24,36 +24,36 @@
                     class="logo-image"
                 >
 
-                <span class="logo-text">IESTP LURIN</span>
+                <span class="logo-text">IESTP LURÍN</span>
 
             </div>
         </div>
 
-        <nav class="sidebar-menu">
+        <nav class="sidebar-menu" aria-label="Secciones">
 
-            <a href="#" class="menu-item">
+            <a href="{{ route('dashboard') }}" class="menu-item {{ request()->routeIs('dashboard') ? 'active' : '' }}" @if (request()->routeIs('dashboard')) aria-current="page" @endif>
                 Dashboard
             </a>
 
-            <a href="#" class="menu-item active">
+            <span class="menu-item menu-item-unavailable">
                 Inventario
-            </a>
+            </span>
 
-            <a href="#" class="menu-item">
+            <span class="menu-item menu-item-unavailable">
                 Movimientos
-            </a>
+            </span>
 
-            <a href="#" class="menu-item">
+            <span class="menu-item menu-item-unavailable">
                 Mantenimiento
-            </a>
+            </span>
 
-            <a href="#" class="menu-item">
+            <span class="menu-item menu-item-unavailable">
                 Reportes
-            </a>
+            </span>
 
-            <a href="#" class="menu-item">
+            <span class="menu-item menu-item-unavailable">
                 Configuración
-            </a>
+            </span>
 
         </nav>
 
@@ -66,20 +66,27 @@
 
             <div class="search-container">
 
-                <span class="search-icon">⌕</span>
-
                 <input
                     type="text"
                     class="search-input"
                     placeholder="Buscar por código/serie"
+                    aria-label="Buscar por código o serie"
                 >
+
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="2"></circle>
+                    <path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                </svg>
 
             </div>
 
             <div class="user-info">
-    <span class="notification-icon">🔔</span>
-    <span class="user-name">Admin</span>
-</div>
+                <svg class="notification-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z" fill="currentColor"></path>
+                    <path d="M10 20a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                </svg>
+                <span class="user-name">Admin</span>
+            </div>
 
         </header>
 

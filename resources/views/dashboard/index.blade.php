@@ -1,85 +1,70 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard')
+@section('title', 'Dashboard | Sistema de Inventario')
 
 @section('content')
 
 <div class="dashboard-page">
-
-    <div class="breadcrumb">
-        INICIO <span>›</span> DASHBOARD GENERAL
-    </div>
+    <nav class="breadcrumb" aria-label="Ruta de navegación">
+        <span>Inicio</span>
+        <span class="breadcrumb-separator" aria-hidden="true">›</span>
+        <span aria-current="page">Dashboard general</span>
+    </nav>
 
     <div class="dashboard-card">
+        <header class="dashboard-intro">
+            <h1>¡Bienvenido(a), Administrador!</h1>
+        </header>
 
-        <h2>¡Bienvenido(a), Administrador!</h2>
+        <section class="dashboard-section" aria-labelledby="summary-title">
+            <h2 id="summary-title" class="section-title">Resumen de activos</h2>
 
-        <hr>
-
-        <h3>RESUMEN DE ACTIVOS</h3>
-
-        <div class="summary-grid">
-
-            <div class="summary-box">
-                <span>TOTAL DE BIENES</span>
-                <strong>464</strong>
+            <div class="summary-grid">
+                <article class="summary-box">
+                    <span>Total de bienes</span>
+                    <strong>464</strong>
+                </article>
+                <article class="summary-box">
+                    <span>Operativos</span>
+                    <strong>—</strong>
+                </article>
+                <article class="summary-box">
+                    <span>Mantenimiento</span>
+                    <strong>—</strong>
+                </article>
+                <article class="summary-box">
+                    <span>Faltantes</span>
+                    <strong>—</strong>
+                </article>
             </div>
+        </section>
 
-            <div class="summary-box">
-                <span>OPERATIVOS</span>
-                <strong>---</strong>
+        <section class="dashboard-section" aria-labelledby="actions-title">
+            <h2 id="actions-title" class="section-title">Accesos rápidos</h2>
+
+            <div class="quick-actions">
+                <button type="button" disabled>Registrar nuevo bien</button>
+                <button type="button" disabled>Nueva incidencia</button>
+                <button type="button" disabled>Toma de inventario</button>
             </div>
-
-            <div class="summary-box">
-                <span>MANTENIMIENTO</span>
-                <strong>---</strong>
-            </div>
-
-            <div class="summary-box">
-                <span>FALTANTES</span>
-                <strong>---</strong>
-            </div>
-
-        </div>
-
-        <h3 class="section-title">ACCESOS RÁPIDOS</h3>
-
-        <div class="quick-actions">
-
-            <button>
-                + Registrar Nuevo Bien
-            </button>
-
-            <button>
-                🔧 Nueva Incidencia
-            </button>
-
-            <button>
-                📋 Toma de Inventario
-            </button>
-
-        </div>
+        </section>
 
         <div class="dashboard-bottom">
+            <section class="dashboard-panel" aria-labelledby="distribution-title">
+                <h2 id="distribution-title">Distribución por ambiente</h2>
+                <ul class="dashboard-list">
+                    <li>Lab 01 · Informática 01</li>
+                    <li>Lab 02 · Diseño UI/UX</li>
+                    <li>Lab 03 · Programación</li>
+                </ul>
+            </section>
 
-            <div class="dashboard-panel">
-                <h3>DISTRIBUCIÓN POR AMBIENTE</h3>
-
-                <p>• Lab 01 - Informática 01</p>
-                <p>• Lab 02 - Diseño UI/UX</p>
-                <p>• Lab 03 - Programación</p>
-            </div>
-
-            <div class="dashboard-panel">
-                <h3>ÚLTIMAS ACTIVIDADES Y MOVIMIENTOS</h3>
-
-                <p>Sin movimientos recientes</p>
-            </div>
-
+            <section class="dashboard-panel" aria-labelledby="activity-title">
+                <h2 id="activity-title">Últimas actividades y movimientos</h2>
+                <p class="dashboard-empty">Sin movimientos recientes</p>
+            </section>
         </div>
-
     </div>
-
 </div>
 
 @endsection

@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('dashboard.index');
-});
+Route::redirect('/', '/home');
+
+Route::view('/login', 'auth.login')->middleware('guest')->name('login');
+
+Route::view('/home', 'dashboard.index')->middleware('auth:web')->name('dashboard');
