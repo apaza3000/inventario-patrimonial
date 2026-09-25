@@ -35,9 +35,9 @@
                 Dashboard
             </a>
 
-            <span class="menu-item menu-item-unavailable">
+            <a href="{{ route('inventario.bienes') }}" class="menu-item {{ request()->routeIs('inventario.bienes') ? 'active' : '' }}" @if (request()->routeIs('inventario.bienes')) aria-current="page" @endif>
                 Inventario
-            </span>
+            </a>
 
             <span class="menu-item menu-item-unavailable">
                 Movimientos
@@ -71,6 +71,7 @@
                     class="search-input"
                     placeholder="Buscar por código/serie"
                     aria-label="Buscar por código o serie"
+                    @if (request()->routeIs('inventario.bienes')) disabled title="Búsqueda disponible próximamente" @endif
                 >
 
                 <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">

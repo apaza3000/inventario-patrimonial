@@ -18,3 +18,7 @@ Route::redirect('/', '/home');
 Route::view('/login', 'auth.login')->middleware('guest')->name('login');
 
 Route::view('/home', 'dashboard.index')->middleware('auth:web')->name('dashboard');
+
+Route::view('/inventario/bienes', 'inventario.bienes.index')
+    ->middleware(['auth:web', 'usuario.activo', 'rol:superadmin'])
+    ->name('inventario.bienes');
