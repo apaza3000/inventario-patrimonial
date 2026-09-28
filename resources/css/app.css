@@ -1028,6 +1028,103 @@ body.login-page {
     border-top: 1px solid #e8dfd1;
 }
 
+.stations-detail-dialog {
+    width: min(960px, calc(100% - 24px));
+}
+
+[data-stations-root] .catalog-filter-grid {
+    grid-template-columns: minmax(0, 520px);
+}
+
+.stations-toolbar,
+.stations-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.stations-toolbar,
+.stations-components {
+    margin-top: 24px;
+}
+
+.stations-components .catalog-section-heading {
+    margin-bottom: 12px;
+}
+
+.stations-components .catalog-table {
+    min-width: 0;
+    table-layout: fixed;
+}
+
+.stations-active-table col:nth-child(1) { width: 20%; }
+.stations-active-table col:nth-child(2) { width: 43%; }
+.stations-active-table col:nth-child(3) { width: 22%; }
+.stations-active-table col:nth-child(4) { width: 15%; }
+.stations-history-table col:nth-child(1) { width: 18%; }
+.stations-history-table col:nth-child(2) { width: 38%; }
+.stations-history-table col:nth-child(3),
+.stations-history-table col:nth-child(4) { width: 17%; }
+.stations-history-table col:nth-child(5) { width: 10%; }
+
+.stations-components .catalog-table th,
+.stations-components .catalog-table td {
+    padding: 12px 10px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.stations-components .catalog-row-actions button {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.stations-components .catalog-badge {
+    min-width: 0;
+    padding: 5px 6px;
+}
+
+@media (max-width: 600px) {
+    .stations-components .catalog-table {
+        min-width: 440px;
+    }
+
+    .stations-components .catalog-table th,
+    .stations-components .catalog-table td {
+        padding: 10px 8px;
+    }
+}
+
+.stations-selection {
+    margin: 18px 0;
+    font-size: 14px;
+    font-weight: 650;
+    overflow-wrap: anywhere;
+}
+
+.stations-delete-section {
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid #e8dfd1;
+    font-size: 13px;
+    color: #66665b;
+}
+
+.stations-delete-button {
+    margin-top: 10px;
+    color: #a4341d;
+}
+
+[data-stations-root] button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+[data-stations-root] input[type="radio"] {
+    accent-color: var(--verde);
+}
+
 .catalog-dialog-heading {
     display: flex;
     align-items: flex-start;

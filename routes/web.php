@@ -22,3 +22,7 @@ Route::view('/home', 'dashboard.index')->middleware('auth:web')->name('dashboard
 Route::view('/inventario/bienes', 'inventario.bienes.index')
     ->middleware(['auth:web', 'usuario.activo', 'rol:superadmin'])
     ->name('inventario.bienes');
+
+Route::view('/inventario/estaciones', 'inventario.estaciones.index')
+    ->middleware(['auth:web', 'usuario.activo', 'rol:superadmin'])
+    ->name('inventario.estaciones');

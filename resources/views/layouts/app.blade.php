@@ -35,7 +35,7 @@
                 Dashboard
             </a>
 
-            <a href="{{ route('inventario.bienes') }}" class="menu-item {{ request()->routeIs('inventario.bienes') ? 'active' : '' }}" @if (request()->routeIs('inventario.bienes')) aria-current="page" @endif>
+            <a href="{{ route('inventario.bienes') }}" class="menu-item {{ request()->routeIs('inventario.*') ? 'active' : '' }}" @if (request()->routeIs('inventario.*')) aria-current="page" @endif>
                 Inventario
             </a>
 
@@ -71,7 +71,7 @@
                     class="search-input"
                     placeholder="Buscar por código/serie"
                     aria-label="Buscar por código o serie"
-                    @if (request()->routeIs('inventario.bienes')) disabled title="Búsqueda disponible próximamente" @endif
+                    @if (request()->routeIs('inventario.*')) disabled title="Búsqueda disponible próximamente" @endif
                 >
 
                 <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">

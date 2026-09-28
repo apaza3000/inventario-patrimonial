@@ -32,7 +32,7 @@
 
         <nav class="catalog-tabs" aria-label="Secciones de inventario">
             <a href="{{ route('inventario.bienes') }}" class="catalog-tab active" aria-current="page">Catálogo de Bienes</a>
-            <span class="catalog-tab catalog-tab-disabled" aria-disabled="true">Estaciones</span>
+            <a href="{{ route('inventario.estaciones') }}" class="catalog-tab">Estaciones</a>
             <span class="catalog-tab catalog-tab-disabled" aria-disabled="true">Toma de Inventario</span>
         </nav>
 
