@@ -26,3 +26,7 @@ Route::view('/inventario/bienes', 'inventario.bienes.index')
 Route::view('/inventario/estaciones', 'inventario.estaciones.index')
     ->middleware(['auth:web', 'usuario.activo', 'rol:superadmin'])
     ->name('inventario.estaciones');
+
+Route::view('/inventario/toma-inventario', 'inventario.toma-inventario.index')
+    ->middleware(['auth:web', 'usuario.activo', 'rol:asistente'])
+    ->name('inventario.toma-inventario');

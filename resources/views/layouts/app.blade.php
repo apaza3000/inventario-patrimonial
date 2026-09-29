@@ -35,7 +35,7 @@
                 Dashboard
             </a>
 
-            <a href="{{ route('inventario.bienes') }}" class="menu-item {{ request()->routeIs('inventario.*') ? 'active' : '' }}" @if (request()->routeIs('inventario.*')) aria-current="page" @endif>
+            <a href="{{ route(auth('web')->user()?->rol?->nombre === 'asistente' ? 'inventario.toma-inventario' : 'inventario.bienes') }}" class="menu-item {{ request()->routeIs('inventario.*') ? 'active' : '' }}" @if (request()->routeIs('inventario.*')) aria-current="page" @endif>
                 Inventario
             </a>
 

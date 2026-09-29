@@ -1032,6 +1032,35 @@ body.login-page {
     width: min(960px, calc(100% - 24px));
 }
 
+.inventory-toolbar {
+    margin-top: 20px;
+}
+
+.inventory-export-actions,
+.inventory-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.inventory-row-actions {
+    margin-top: 0;
+}
+
+[data-inventory-root] .catalog-filter-grid {
+    grid-template-columns: minmax(0, 620px);
+}
+
+[data-inventory-root] button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+[data-inventory-root] input[type="radio"] {
+    accent-color: var(--verde);
+}
+
 [data-stations-root] .catalog-filter-grid {
     grid-template-columns: minmax(0, 520px);
 }

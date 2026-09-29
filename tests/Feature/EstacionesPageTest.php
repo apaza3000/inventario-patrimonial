@@ -44,7 +44,7 @@ class EstacionesPageTest extends TestCase
         }
     }
 
-    public function test_inventory_tabs_link_both_pages_and_inventory_taking_stays_disabled(): void
+    public function test_inventory_tabs_link_all_three_pages(): void
     {
         $this->actingAs($this->userWithRole('superadmin'), 'web');
 
@@ -54,6 +54,6 @@ class EstacionesPageTest extends TestCase
         $this->get('/inventario/estaciones')->assertOk()
             ->assertSee('href="'.route('inventario.bienes').'" class="catalog-tab">Catálogo de Bienes', false)
             ->assertSee('href="'.route('inventario.estaciones').'" class="catalog-tab active" aria-current="page"', false)
-            ->assertSee('aria-disabled="true">Toma de Inventario', false);
+            ->assertSee('href="'.route('inventario.toma-inventario').'" class="catalog-tab">Toma de Inventario', false);
     }
 }
