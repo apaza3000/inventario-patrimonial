@@ -1036,6 +1036,52 @@ body.login-page {
     margin-top: 20px;
 }
 
+.movement-flow-note {
+    margin-top: 20px;
+    padding: 14px 16px;
+    border: 1px solid #e5d8b4;
+    border-radius: 12px;
+    background: #fbf2dd;
+    color: #645735;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.movement-lookup,
+.movement-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.movement-lookup .catalog-form-grid {
+    grid-template-columns: minmax(0, 260px);
+}
+
+.movement-badge-pending {
+    background: #fbefca;
+    color: #7b5a15;
+}
+
+[data-movements-root] .catalog-filter-grid {
+    grid-template-columns: minmax(0, 620px);
+}
+
+[data-movements-root] .catalog-table td {
+    overflow-wrap: anywhere;
+}
+
+[data-movements-root] button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+[data-movements-root] [hidden] {
+    display: none !important;
+}
+
 .inventory-export-actions,
 .inventory-row-actions {
     display: flex;
