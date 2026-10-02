@@ -41,3 +41,7 @@ Route::view('/movimientos', 'movimientos.index')
 Route::view('/mantenimientos', 'mantenimientos.index')
     ->middleware(['auth:web', 'usuario.activo', 'rol:coordinador'])
     ->name('mantenimientos.index');
+
+Route::view('/reportes', 'reportes.index')
+    ->middleware(['auth:web', 'usuario.activo', 'rol:asistente,coordinador'])
+    ->name('reportes.index');

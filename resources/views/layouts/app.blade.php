@@ -55,9 +55,11 @@
                 <span class="menu-item menu-item-unavailable">Mantenimiento</span>
             @endif
 
-            <span class="menu-item menu-item-unavailable">
-                Reportes
-            </span>
+            @if (in_array(auth('web')->user()?->rol?->nombre, ['superadmin', 'administrador', 'director', 'coordinador', 'asistente'], true))
+                <a href="{{ route('reportes.index') }}" class="menu-item {{ request()->routeIs('reportes.*') ? 'active' : '' }}" @if (request()->routeIs('reportes.*')) aria-current="page" @endif>Reportes</a>
+            @else
+                <span class="menu-item menu-item-unavailable">Reportes</span>
+            @endif
 
             <span class="menu-item menu-item-unavailable">
                 Configuración
@@ -79,7 +81,7 @@
                     class="search-input"
                     placeholder="Buscar por código/serie"
                     aria-label="Buscar por código o serie"
-                    @if (request()->routeIs('inventario.*', 'movimientos.*', 'mantenimientos.*')) disabled title="Búsqueda disponible próximamente" @endif
+                    @if (request()->routeIs('inventario.*', 'movimientos.*', 'mantenimientos.*', 'reportes.*')) disabled title="Búsqueda disponible próximamente" @endif
                 >
 
                 <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">

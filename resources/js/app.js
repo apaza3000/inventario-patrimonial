@@ -6,3 +6,4 @@ import './estaciones';
 import './toma-inventario';
 import './movimientos';
 import './mantenimientos';
+import './reportes';

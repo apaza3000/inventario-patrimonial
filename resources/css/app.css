@@ -761,6 +761,68 @@ body.login-page {
 }
 
 /* Catálogo general de bienes */
+.reports-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+    gap: 20px;
+    margin-top: 26px;
+}
+
+.reports-scope {
+    padding: 20px;
+    border: 1px solid #e3d9c9;
+    border-radius: 16px;
+    background: #f3eedf;
+}
+
+.reports-scope h2,
+.reports-card h2 {
+    color: var(--oscuro);
+    font-size: 19px;
+    line-height: 1.35;
+}
+
+.reports-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 22px;
+    border: 1px solid #eee8dc;
+    border-radius: 18px;
+    background: var(--blanco);
+    box-shadow: 0 6px 18px rgba(51, 48, 40, 0.05);
+}
+
+.reports-format-label {
+    display: inline-block;
+    margin-bottom: 14px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: #f3eedf;
+    color: #5b624c;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.reports-card > .catalog-subtitle {
+    flex: 1;
+    margin-bottom: 22px;
+}
+
+.reports-card .inventory-export-actions > button {
+    flex: 1 1 140px;
+}
+
+.reports-card button:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+.reports-download-status {
+    min-height: 24px;
+    overflow-wrap: anywhere;
+}
+
 .catalog-page {
     max-width: 1240px;
     margin: 0 auto;
