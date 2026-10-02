@@ -129,18 +129,38 @@
             </div>
 
             <p class="catalog-message" data-bien-detail-message role="status" aria-live="polite"></p>
-            <dl class="catalog-detail-grid" data-bien-detail-fields hidden>
-                <div><dt>ID</dt><dd data-detail-id></dd></div>
-                <div><dt>CBI</dt><dd data-detail-cbi></dd></div>
-                <div class="catalog-detail-wide"><dt>Descripción</dt><dd data-detail-descripcion></dd></div>
-                <div><dt>Sede</dt><dd data-detail-sede></dd></div>
-                <div><dt>Ambiente</dt><dd data-detail-ambiente></dd></div>
-                <div><dt>Estado</dt><dd data-detail-estado></dd></div>
-                <div><dt>Condición</dt><dd data-detail-condicion></dd></div>
-                <div><dt>Activo</dt><dd data-detail-activo></dd></div>
-                <div><dt>Fecha de registro</dt><dd data-detail-fecha></dd></div>
-                <div class="catalog-detail-wide"><dt>Observaciones</dt><dd data-detail-observaciones></dd></div>
-            </dl>
+            <div class="catalog-detail-sections" data-bien-detail-fields hidden>
+                <section class="catalog-detail-section" aria-labelledby="bien-detail-main-title">
+                    <h3 id="bien-detail-main-title">Datos principales</h3>
+                    <dl class="catalog-detail-grid">
+                        <div><dt>ID</dt><dd data-detail-id></dd></div>
+                        <div><dt>CBI</dt><dd data-detail-cbi></dd></div>
+                        <div class="catalog-detail-wide"><dt>Descripción</dt><dd data-detail-descripcion></dd></div>
+                        <div class="catalog-detail-wide"><dt>Fecha de registro</dt><dd data-detail-fecha></dd></div>
+                    </dl>
+                </section>
+
+                <section class="catalog-detail-section" aria-labelledby="bien-detail-status-title">
+                    <h3 id="bien-detail-status-title">Estado, condición y ubicación</h3>
+                    <dl class="catalog-detail-grid">
+                        <div><dt>Estado</dt><dd data-detail-estado></dd></div>
+                        <div><dt>Condición</dt><dd data-detail-condicion></dd></div>
+                        <div><dt>Sede</dt><dd data-detail-sede></dd></div>
+                        <div><dt>Ambiente</dt><dd data-detail-ambiente></dd></div>
+                        <div class="catalog-detail-wide"><dt>Activo</dt><dd data-detail-activo></dd></div>
+                    </dl>
+                </section>
+
+                <section class="catalog-detail-section" aria-labelledby="bien-detail-technical-title">
+                    <h3 id="bien-detail-technical-title">Información técnica disponible</h3>
+                    <p class="catalog-detail-empty">El detalle actual del bien no incluye especificaciones técnicas.</p>
+                </section>
+
+                <section class="catalog-detail-section" aria-labelledby="bien-detail-observations-title">
+                    <h3 id="bien-detail-observations-title">Observaciones</h3>
+                    <p class="catalog-detail-observations" data-detail-observaciones></p>
+                </section>
+            </div>
             <form method="dialog" class="catalog-detail-actions">
                 <button type="submit" class="catalog-secondary-button">Cerrar</button>
             </form>
