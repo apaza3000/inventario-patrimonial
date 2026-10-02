@@ -5,3 +5,4 @@ import './catalogo-bienes';
 import './estaciones';
 import './toma-inventario';
 import './movimientos';
+import './mantenimientos';

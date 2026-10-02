@@ -37,3 +37,7 @@ Route::view('/inventario/toma-inventario', 'inventario.toma-inventario.index')
 Route::view('/movimientos', 'movimientos.index')
     ->middleware(['auth:web', 'usuario.activo', 'rol:asistente'])
     ->name('movimientos.index');
+
+Route::view('/mantenimientos', 'mantenimientos.index')
+    ->middleware(['auth:web', 'usuario.activo', 'rol:coordinador'])
+    ->name('mantenimientos.index');

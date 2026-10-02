@@ -49,9 +49,11 @@
                 <span class="menu-item menu-item-unavailable">Movimientos</span>
             @endif
 
-            <span class="menu-item menu-item-unavailable">
-                Mantenimiento
-            </span>
+            @if (in_array(auth('web')->user()?->rol?->nombre, ['superadmin', 'administrador', 'director', 'coordinador'], true))
+                <a href="{{ route('mantenimientos.index') }}" class="menu-item {{ request()->routeIs('mantenimientos.*') ? 'active' : '' }}" @if (request()->routeIs('mantenimientos.*')) aria-current="page" @endif>Mantenimiento</a>
+            @else
+                <span class="menu-item menu-item-unavailable">Mantenimiento</span>
+            @endif
 
             <span class="menu-item menu-item-unavailable">
                 Reportes
@@ -77,7 +79,7 @@
                     class="search-input"
                     placeholder="Buscar por código/serie"
                     aria-label="Buscar por código o serie"
-                    @if (request()->routeIs('inventario.*', 'movimientos.*')) disabled title="Búsqueda disponible próximamente" @endif
+                    @if (request()->routeIs('inventario.*', 'movimientos.*', 'mantenimientos.*')) disabled title="Búsqueda disponible próximamente" @endif
                 >
 
                 <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">

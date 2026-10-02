@@ -1306,6 +1306,47 @@ body.login-page {
     grid-template-columns: minmax(0, 620px);
 }
 
+[data-maintenance-root] .catalog-filter-grid {
+    grid-template-columns: minmax(0, 620px);
+}
+
+[data-maintenance-root] button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+[data-maintenance-root] .catalog-table td {
+    overflow-wrap: anywhere;
+}
+
+[data-maintenance-root] .catalog-detail-grid dd {
+    white-space: pre-wrap;
+}
+
+.maintenance-form-dialog {
+    width: min(960px, calc(100% - 24px));
+}
+
+.maintenance-picker {
+    min-width: 0;
+    margin: 18px 0;
+    padding: 16px;
+    border: 1px solid #e8dfd1;
+    border-radius: 12px;
+    background: #fffdf9;
+}
+
+.maintenance-picker legend {
+    padding: 0 6px;
+    color: #59694b;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.maintenance-picker .catalog-form-grid {
+    margin-top: 14px;
+}
+
 [data-inventory-root] button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
