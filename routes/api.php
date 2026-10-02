@@ -19,6 +19,7 @@ use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\SedeController;
 use App\Http\Controllers\TipoAmbienteController;
+use App\Http\Controllers\TipoMantenimientoController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
@@ -56,6 +57,8 @@ Route::middleware(['auth:web', 'usuario.activo'])->group(function () {
     });
 
     Route::middleware('rol:coordinador')->group(function () {
+        Route::get('/tipos-mantenimiento', [TipoMantenimientoController::class, 'index']);
+
         Route::get('/equipos', [EquipoController::class, 'index']);
         Route::get('/equipos/{bien_id}', [EquipoController::class, 'show'])
             ->where('bien_id', '[0-9]{1,10}');
