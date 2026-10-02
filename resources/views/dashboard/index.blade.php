@@ -13,7 +13,7 @@
 
     <div class="dashboard-card">
         <header class="dashboard-intro">
-            <h1>¡Bienvenido(a), Administrador!</h1>
+            <h1>¡Bienvenido(a), {{ auth('web')->user()->nombres }}!</h1>
         </header>
 
         <section class="dashboard-section" aria-labelledby="summary-title">

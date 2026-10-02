@@ -88,7 +88,19 @@
                     <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z" fill="currentColor"></path>
                     <path d="M10 20a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
                 </svg>
-                <span class="user-name">Admin</span>
+                @php
+                    $usuario = auth('web')->user();
+                    $nombreUsuario = trim(($usuario?->nombres ?? '') . ' ' . ($usuario?->apellidos ?? ''));
+                @endphp
+                <div class="user-menu" data-user-menu data-csrf-url="{{ url('/sanctum/csrf-cookie') }}" data-logout-url="{{ url('/api/logout') }}" data-login-url="{{ route('login') }}">
+                    <button type="button" class="user-menu-toggle" data-user-menu-toggle aria-expanded="false" aria-controls="user-menu-panel" title="{{ $nombreUsuario ?: 'Usuario' }}">
+                        <span class="user-name">{{ $nombreUsuario ?: 'Usuario' }}</span>
+                    </button>
+                    <div id="user-menu-panel" class="user-menu-panel" data-user-menu-panel hidden>
+                        <button type="button" class="user-logout-button" data-user-logout>Cerrar sesión</button>
+                        <p class="user-menu-status" data-user-menu-status role="alert" aria-live="polite"></p>
+                    </div>
+                </div>
             </div>
 
         </header>

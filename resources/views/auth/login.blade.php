@@ -10,6 +10,7 @@
     <div class="login-shell">
         <header class="login-brand">
             <img src="{{ asset('images/logo-instituto.png') }}" alt="Logo institucional" class="login-brand-logo">
+            <p class="login-brand-name">Instituto de Educación Superior Tecnológico Público Lurín</p>
         </header>
 
         <main class="login-card">

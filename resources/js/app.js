@@ -1,4 +1,5 @@
 import './bootstrap';
+import './user-menu';
 import './login';
 import './catalogo-bienes';
 import './estaciones';
