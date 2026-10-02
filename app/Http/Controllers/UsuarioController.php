@@ -7,6 +7,7 @@ use App\Models\Usuario;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -59,33 +60,56 @@ class UsuarioController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
-        $usuario = Usuario::find($id);
-
-        if ($usuario === null) {
-            return $this->notFound();
-        }
-
-        $data = $this->validatedData($request, $usuario);
-
-        if ($data instanceof JsonResponse) {
-            return $data;
-        }
-
-        if (array_key_exists('password', $data)) {
-            $data['password_hash'] = Hash::make($data['password']);
-            unset($data['password']);
-        }
-
         try {
-            $usuario->update($data);
+            return DB::transaction(function () use ($request, $id): JsonResponse {
+                // Serialize user updates before checking the remaining active superadmins.
+                $superadmin = Rol::where('nombre', 'superadmin')->lockForUpdate()->first();
+                $usuario = Usuario::whereKey($id)->lockForUpdate()->first();
+
+                if ($usuario === null) {
+                    return $this->notFound();
+                }
+
+                $data = $this->validatedData($request, $usuario);
+
+                if ($data instanceof JsonResponse) {
+                    return $data;
+                }
+
+                if (array_key_exists('activo', $data) && ! (bool) $data['activo']) {
+                    if ($usuario->id === $request->user('web')->id) {
+                        return response()->json([
+                            'message' => 'No puede desactivar su propia cuenta.',
+                        ], 409);
+                    }
+
+                    if ($usuario->activo && $superadmin !== null && $usuario->rol_id === $superadmin->id
+                        && ! Usuario::where('rol_id', $superadmin->id)
+                            ->where('activo', true)
+                            ->where('id', '!=', $usuario->id)
+                            ->lockForUpdate()
+                            ->exists()) {
+                        return response()->json([
+                            'message' => 'No se puede desactivar al último superadmin activo.',
+                        ], 409);
+                    }
+                }
+
+                if (array_key_exists('password', $data)) {
+                    $data['password_hash'] = Hash::make($data['password']);
+                    unset($data['password']);
+                }
+
+                $usuario->update($data);
+
+                return response()->json([
+                    'message' => 'Se actualizó el usuario correctamente.',
+                    'data' => $usuario->refresh()->load(self::RELATIONS),
+                ]);
+            });
         } catch (QueryException $exception) {
             return $this->writeError($exception);
         }
-
-        return response()->json([
-            'message' => 'Se actualizó el usuario correctamente.',
-            'data' => $usuario->refresh()->load(self::RELATIONS),
-        ]);
     }
 
     private function validatedData(Request $request, ?Usuario $usuario = null): array|JsonResponse
