@@ -761,6 +761,31 @@ body.login-page {
 }
 
 /* Catálogo general de bienes */
+.config-group { margin-top: 22px; }
+[data-config-root] [hidden] { display: none !important; }
+[data-config-root] .catalog-secondary-button:disabled { opacity: .5; cursor: not-allowed; }
+[data-config-root] .catalog-form-grid label > span { color: inherit; }
+.config-group h2 { font-size: 19px; color: #5b624c; }
+.config-module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; margin-top: 12px; }
+.config-module-button { display: flex; flex-direction: column; gap: 8px; padding: 18px; border: 1px solid #e3d9c9; border-radius: 14px; background: #fff; color: var(--oscuro); text-align: left; cursor: pointer; font: inherit; }
+.config-module-button span { font-weight: 700; }
+.config-module-button small { color: #6d695f; }
+.config-module-button[aria-pressed="true"] { background: #f7e9be; border-color: #bd9639; }
+.config-module-button:focus-visible { outline: 3px solid var(--verde); outline-offset: 3px; }
+.config-search { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; font-weight: 650; }
+.config-search input { padding: 12px; border: 1px solid #ddd8cc; border-radius: 10px; background: #fff; font: inherit; width: 100%; }
+.config-table td { overflow-wrap: anywhere; white-space: normal; }
+.config-detail dd { white-space: pre-wrap; overflow-wrap: anywhere; }
+.config-picker-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+.config-picker-controls button { padding: 6px 10px; }
+.config-field-note { color: #6d695f; font-weight: 400; line-height: 1.5; }
+.config-table button:disabled { opacity: .5; cursor: not-allowed; }
+[data-config-root] .catalog-table-container { overflow-x: auto; }
+[data-config-root] .catalog-dialog { padding: clamp(18px, 4vw, 30px); }
+[data-config-root] .catalog-dialog-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 22px; }
+[data-config-root] .catalog-dialog-header h2 { font-size: 23px; line-height: 1.3; }
+[data-config-root] .catalog-table td { white-space: normal; overflow-wrap: anywhere; }
+[data-config-root] .catalog-dialog input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--verde); }
 .reports-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));

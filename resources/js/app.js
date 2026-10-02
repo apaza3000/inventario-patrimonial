@@ -7,3 +7,4 @@ import './toma-inventario';
 import './movimientos';
 import './mantenimientos';
 import './reportes';
+import './configuracion';
