@@ -35,9 +35,13 @@
                 Dashboard
             </a>
 
-            <a href="{{ route(auth('web')->user()?->rol?->nombre === 'asistente' ? 'inventario.toma-inventario' : 'inventario.bienes') }}" class="menu-item {{ request()->routeIs('inventario.*') ? 'active' : '' }}" @if (request()->routeIs('inventario.*')) aria-current="page" @endif>
-                Inventario
-            </a>
+            @if (in_array(auth('web')->user()?->rol?->nombre, ['superadmin', 'administrador', 'director', 'asistente'], true))
+                <a href="{{ route(auth('web')->user()?->rol?->nombre === 'asistente' ? 'inventario.toma-inventario' : 'inventario.bienes') }}" class="menu-item {{ request()->routeIs('inventario.*') ? 'active' : '' }}" @if (request()->routeIs('inventario.*')) aria-current="page" @endif>
+                    Inventario
+                </a>
+            @else
+                <span class="menu-item menu-item-unavailable">Inventario</span>
+            @endif
 
             @if (in_array(auth('web')->user()?->rol?->nombre, ['superadmin', 'administrador', 'director', 'asistente'], true))
                 <a href="{{ route('movimientos.index') }}" class="menu-item {{ request()->routeIs('movimientos.*') ? 'active' : '' }}" @if (request()->routeIs('movimientos.*')) aria-current="page" @endif>Movimientos</a>
