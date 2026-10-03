@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bien;
 use App\Models\Mantenimiento;
 use App\Services\AlcanceDatosService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class MantenimientoController extends Controller
 {
-    private const RELATIONS = ['bien', 'tipoMantenimiento', 'tecnico'];
+    private const RELATIONS = ['bien.condicion', 'tipoMantenimiento', 'tecnico'];
 
     public function __construct(private readonly AlcanceDatosService $alcance)
     {
@@ -47,12 +49,29 @@ class MantenimientoController extends Controller
             return $data;
         }
 
-        $mantenimiento = Mantenimiento::create($data);
+        return DB::transaction(function () use ($data): JsonResponse {
+            $bien = Bien::whereKey($data['bien_id'])->lockForUpdate()->first();
 
-        return response()->json([
-            'message' => 'Se creó el mantenimiento correctamente.',
-            'data' => $mantenimiento->load(self::RELATIONS),
-        ], 201);
+            if ($bien === null) {
+                return response()->json([
+                    'message' => 'Los datos enviados no son válidos.',
+                    'errors' => ['bien_id' => ['El bien ya no existe.']],
+                ], 422);
+            }
+
+            $condicionId = $data['condicion_id'] ?? null;
+            unset($data['condicion_id']);
+            $mantenimiento = Mantenimiento::create($data);
+
+            if ($condicionId !== null) {
+                $bien->update(['condicion_id' => $condicionId]);
+            }
+
+            return response()->json([
+                'message' => 'Se creó el mantenimiento correctamente.',
+                'data' => $mantenimiento->load(self::RELATIONS),
+            ], 201);
+        });
     }
 
     public function update(Request $request, int $id): JsonResponse
@@ -92,12 +111,20 @@ class MantenimientoController extends Controller
 
     private function validatedData(Request $request, bool $updating = false): array|JsonResponse
     {
+        if ($updating && array_key_exists('condicion_id', $request->all())) {
+            return response()->json([
+                'message' => 'Los datos enviados no son válidos.',
+                'errors' => ['condicion_id' => ['La condición solo puede cambiarse al registrar un mantenimiento.']],
+            ], 422);
+        }
+
         $required = $updating ? 'sometimes' : 'required';
 
         $validator = Validator::make($request->all(), [
             'bien_id' => [$required, 'required', 'integer', 'between:1,2147483647', 'exists:bienes,id'],
             'tipo_mantenimiento_id' => [$required, 'required', 'integer', 'between:1,2147483647', 'exists:tipos_mantenimiento,id'],
             'tecnico_id' => ['sometimes', 'nullable', 'integer', 'between:1,2147483647', 'exists:usuarios,id'],
+            'condicion_id' => ['sometimes', 'required', 'integer', 'between:1,2147483647', 'exists:condiciones_bien,id'],
             'fecha_mantenimiento' => [$required, 'required', 'date_format:Y-m-d'],
             'descripcion' => [$required, 'required', 'string', 'max:255'],
             'diagnostico' => ['sometimes', 'nullable', 'string', 'max:255'],
