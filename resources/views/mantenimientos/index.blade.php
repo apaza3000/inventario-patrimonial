@@ -7,7 +7,7 @@
 <div class="catalog-page" data-maintenance-root data-maintenance-url="{{ url('/api/mantenimientos') }}" data-login-url="{{ route('login') }}"
     @if ($canManage)
         data-types-url="{{ url('/api/tipos-mantenimiento') }}" data-bienes-url="{{ url('/api/bienes') }}"
-        data-users-url="{{ url('/api/usuarios') }}" data-csrf-url="{{ url('/sanctum/csrf-cookie') }}"
+        data-users-url="{{ url('/api/usuarios') }}" data-csrf-url="{{ url('/sanctum/csrf-cookie') }}" data-conditions-url="{{ url('/api/condiciones-bien') }}"
     @endif
 >
     <nav class="breadcrumb" aria-label="Ruta de navegación"><span>Mantenimiento</span><span class="breadcrumb-separator" aria-hidden="true">›</span><span aria-current="page">Registro de Mantenimientos</span></nav>
@@ -74,6 +74,16 @@
                         <p class="stations-selection" data-selected-{{ $prefix }} aria-live="polite"></p>
                     </fieldset>
                 @endforeach
+                <fieldset class="maintenance-picker" data-condition-section hidden>
+                    <legend>Condición del bien</legend>
+                    <p class="stations-selection" data-current-condition aria-live="polite">Selecciona un bien para consultar su condición actual.</p>
+                    <div class="catalog-form-grid">
+                        <label>Cambiar condición (opcional)<select name="condicion_id" disabled><option value="">Mantener la condición actual</option></select></label>
+                    </div>
+                    <p class="catalog-subtitle">Si eliges otra condición, se aplicará al bien al guardar este mantenimiento.</p>
+                    <p class="catalog-message" data-condition-message role="status" aria-live="polite"></p>
+                    <button type="button" class="catalog-retry-button" data-condition-retry hidden>Reintentar carga de condiciones</button>
+                </fieldset>
                 <div class="catalog-form-grid">
                     <label>Tipo de mantenimiento <span aria-hidden="true">*</span><select name="tipo_mantenimiento_id" required disabled><option value="">Selecciona un tipo</option></select></label>
                     <label>Fecha de mantenimiento <span aria-hidden="true">*</span><input name="fecha_mantenimiento" type="date" required></label>

@@ -46,6 +46,9 @@ class MantenimientosPageTest extends TestCase
                 ->assertSee('data-types-url="'.url('/api/tipos-mantenimiento').'"', false)
                 ->assertSee('data-bienes-url="'.url('/api/bienes').'"', false)
                 ->assertSee('data-users-url="'.url('/api/usuarios').'"', false)
+                ->assertSee('data-conditions-url="'.url('/api/condiciones-bien').'"', false)
+                ->assertSee('Cambiar condición (opcional)')->assertSee('Mantener la condición actual')
+                ->assertSee('data-condition-section hidden', false)
                 ->assertSee('data-export-url="'.url('/api/reportes/mantenimientos/pdf').'"', false)
                 ->assertSee('data-export-url="'.url('/api/reportes/mantenimientos/excel').'"', false)
                 ->assertSee('href="'.route('mantenimientos.index').'" class="menu-item active"', false);
@@ -61,7 +64,8 @@ class MantenimientosPageTest extends TestCase
             ->assertSee('data-export-url="'.url('/api/reportes/mantenimientos/excel').'"', false)
             ->assertDontSee('data-new-maintenance', false)->assertDontSee('data-maintenance-form-dialog', false)
             ->assertDontSee('data-maintenance-delete-form', false)->assertDontSee('data-users-url', false)
-            ->assertDontSee('data-bienes-url', false);
+            ->assertDontSee('data-bienes-url', false)->assertDontSee('data-condition-section', false)
+            ->assertDontSee('data-conditions-url', false);
     }
 
     public function test_real_api_accepts_nullable_technician_and_supports_detail_edit_delete_and_validation(): void

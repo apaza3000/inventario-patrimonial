@@ -191,6 +191,9 @@ if (maintenance) {
         const formMessage = find('[data-form-message]', form);
         const save = find('[data-save-maintenance]');
         const typeSelect = form.elements.tipo_mantenimiento_id;
+        const conditionSelect = form.elements.condicion_id;
+        const conditionSection = find('[data-condition-section]');
+        let conditionsReady = false, conditionRequest = 0;
         let editingId = null, formRequest = 0, recordReady = false, typesReady = false;
         let selectedBien = null, selectedUser = null;
         const labelBien = (bien) => `ID ${bien.id} · CBI ${bien.cbi ?? '—'} · ${bien.descripcion ?? '—'}`;
@@ -202,6 +205,10 @@ if (maintenance) {
             form.querySelectorAll('[data-close-dialog]').forEach((button) => { button.disabled = writing; });
             find('[data-form-retry]').disabled = writing || opening;
             typeSelect.disabled = writing || opening || !typesReady;
+            conditionSection.hidden = editingId !== null;
+            conditionSelect.disabled = editingId !== null || writing || opening || !conditionsReady || !selectedBien;
+            find('[data-condition-retry]').disabled = writing || opening;
+            find('[data-current-condition]').textContent = selectedBien ? `Condición actual: ${selectedBien.condicion?.nombre ?? '—'}` : 'Selecciona un bien para consultar su condición actual.';
             bienPicker?.controls();
             userPicker?.controls();
             save.disabled = writing || opening || !recordReady || !typesReady || !selectedBien || !bienPicker?.ready() || !userPicker?.ready();
@@ -228,8 +235,35 @@ if (maintenance) {
             });
             return page;
         };
-        bienPicker = picker('bien', maintenance.dataset.bienesUrl, labelBien, (item) => [item.cbi, item.descripcion], () => selectedBien, (item) => { selectedBien = item; });
+        bienPicker = picker('bien', maintenance.dataset.bienesUrl, labelBien, (item) => [item.cbi, item.descripcion], () => selectedBien, (item) => {
+            if (item?.id !== selectedBien?.id) conditionSelect.value = '';
+            selectedBien = item;
+        });
         userPicker = picker('user', maintenance.dataset.usersUrl, userName, (item) => [item.nombres, item.apellidos], () => selectedUser, (item) => { selectedUser = item; });
+        const loadConditions = async () => {
+            if (editingId !== null) return;
+            const token = formRequest, request = ++conditionRequest;
+            conditionsReady = false;
+            find('[data-condition-message]').textContent = 'Cargando condiciones…';
+            find('[data-condition-retry]').hidden = true;
+            refresh();
+            try {
+                const { data } = await window.axios.get(maintenance.dataset.conditionsUrl);
+                if (token !== formRequest || request !== conditionRequest || editingId !== null) return;
+                const previous = conditionSelect.value;
+                conditionSelect.replaceChildren(new Option('Mantener la condición actual', ''));
+                data.data.forEach((condition) => conditionSelect.add(new Option(condition.nombre, String(condition.id))));
+                conditionSelect.value = previous;
+                conditionsReady = data.data.length > 0;
+                find('[data-condition-message]').textContent = conditionsReady ? '' : 'No hay condiciones disponibles. Se mantendrá la condición actual.';
+            } catch (error) {
+                if (token !== formRequest || request !== conditionRequest) return;
+                conditionSelect.value = '';
+                find('[data-condition-message]').textContent = `${errorText(error)} Se mantendrá la condición actual.`;
+                find('[data-condition-retry]').hidden = [401, 403].includes(error.response?.status);
+            } finally { if (token === formRequest && request === conditionRequest) refresh(); }
+        };
+        find('[data-condition-retry]').addEventListener('click', loadConditions);
         const loadForm = async () => {
             const token = ++formRequest;
             formDialog.dataset.loading = '1';
@@ -250,6 +284,7 @@ if (maintenance) {
                 }
                 const [typesResult] = await Promise.allSettled([
                     window.axios.get(maintenance.dataset.typesUrl), bienPicker.load(1), userPicker.load(1),
+                    ...(editingId === null ? [loadConditions()] : []),
                 ]);
                 if (token !== formRequest) return;
                 if (typesResult.status === 'rejected') throw typesResult.reason;
@@ -280,6 +315,12 @@ if (maintenance) {
             selectedUser = null;
             recordReady = id === null;
             typesReady = false;
+            conditionsReady = false;
+            conditionRequest += 1;
+            conditionSelect.replaceChildren(new Option('Mantener la condición actual', ''));
+            conditionSelect.value = '';
+            find('[data-condition-message]').textContent = '';
+            find('[data-condition-retry]').hidden = true;
             typeSelect.replaceChildren(new Option('Selecciona un tipo', ''));
             delete typeSelect.dataset.selectedId;
             find('#maintenance-form-title').textContent = id === null ? 'Registrar mantenimiento' : `Editar mantenimiento #${id}`;
@@ -307,6 +348,9 @@ if (maintenance) {
                 descripcion: form.elements.descripcion.value.trim(),
             };
             ['diagnostico', 'trabajo_realizado', 'observaciones'].forEach((key) => { payload[key] = form.elements[key].value.trim() || null; });
+            if (editingId === null && conditionsReady && conditionSelect.value !== '' && String(selectedBien.condicion_id ?? '') !== conditionSelect.value) {
+                payload.condicion_id = Number(conditionSelect.value);
+            }
             formDialog.dataset.busy = '1';
             formMessage.textContent = '';
             refresh();
