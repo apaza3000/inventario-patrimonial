@@ -21,7 +21,7 @@ if (root) {
     const date = (value) => {
         if (!value) return '—';
         const parsed = new Date(value);
-        return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString('es-PE');
+        return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString('es-PE', { timeZone: 'America/Lima' });
     };
     const errorText = (error) => {
         const status = error.response?.status;
@@ -193,8 +193,11 @@ if (root) {
     find('[data-options-retry]').addEventListener('click', loadOptions);
     find('[data-new-movement]').addEventListener('click', () => {
         createForm.reset(); options = null; find('[data-origin-label]').value = '—';
-        const now = new Date(); const pad = (value) => String(value).padStart(2, '0');
-        createForm.elements.fecha_movimiento.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        const parts = Object.fromEntries(new Intl.DateTimeFormat('es-PE', {
+            timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+        }).formatToParts(new Date()).map(({ type, value }) => [type, value]));
+        createForm.elements.fecha_movimiento.value = `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`;
         createDialog.showModal(); loadOptions();
     });
     createForm.addEventListener('submit', async (event) => {

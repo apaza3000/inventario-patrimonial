@@ -76,23 +76,28 @@ class UsuarioController extends Controller
                     return $data;
                 }
 
-                if (array_key_exists('activo', $data) && ! (bool) $data['activo']) {
+                $desactivar = array_key_exists('activo', $data) && ! (bool) $data['activo'];
+
+                if ($desactivar) {
                     if ($usuario->id === $request->user('web')->id) {
                         return response()->json([
                             'message' => 'No puede desactivar su propia cuenta.',
                         ], 409);
                     }
+                }
 
-                    if ($usuario->activo && $superadmin !== null && $usuario->rol_id === $superadmin->id
-                        && ! Usuario::where('rol_id', $superadmin->id)
-                            ->where('activo', true)
-                            ->where('id', '!=', $usuario->id)
-                            ->lockForUpdate()
-                            ->exists()) {
-                        return response()->json([
-                            'message' => 'No se puede desactivar al último superadmin activo.',
-                        ], 409);
-                    }
+                if ($usuario->activo && $superadmin !== null && (int) $usuario->rol_id === (int) $superadmin->id
+                    && ($desactivar || (isset($data['rol_id']) && (int) $data['rol_id'] !== (int) $superadmin->id))
+                    && ! Usuario::where('rol_id', $superadmin->id)
+                        ->where('activo', true)
+                        ->where('id', '!=', $usuario->id)
+                        ->lockForUpdate()
+                        ->exists()) {
+                    return response()->json([
+                        'message' => $desactivar
+                            ? 'No se puede desactivar al último superadmin activo.'
+                            : 'No se puede cambiar el rol del último superadmin activo.',
+                    ], 409);
                 }
 
                 if (array_key_exists('password', $data)) {
