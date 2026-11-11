@@ -155,7 +155,7 @@ if (root) {
     }
     detailDialog.addEventListener('close', () => { detailRequest += 1; downloadRequest += 1; current = null; });
     find('[data-detail-retry]').addEventListener('click', () => showDetail(detailId));
-    find('[data-movement-lookup-form]').addEventListener('submit', (event) => {
+    find('[data-movement-lookup-form]')?.addEventListener('submit', (event) => {
         event.preventDefault(); const form = event.currentTarget;
         if (form.reportValidity()) showDetail(Number(form.elements.id.value));
     });
@@ -164,6 +164,23 @@ if (root) {
         items.forEach((item) => select.add(new Option(label(item), String(item.id))));
     };
     const selectedBien = () => options?.bienes.find((item) => item.id === Number(createForm.elements.bien_id.value));
+    const bienSearch = find('[data-bien-search]');
+    const bienLabel = (item) => `CBI ${item.cbi ?? '—'} · ${item.descripcion} · ID ${item.id}`;
+    const renderBienOptions = (selectedId = createForm.elements.bien_id.value) => {
+        const query = bienSearch.value.trim().toLocaleLowerCase('es');
+        const items = options?.bienes ?? [];
+        const matches = query ? items.filter((item) => String(item.cbi ?? '').toLocaleLowerCase('es').includes(query)) : items;
+        const selected = items.find((item) => String(item.id) === String(selectedId));
+        const select = createForm.elements.bien_id;
+        fill(select, matches, query && !matches.length ? 'Sin coincidencias' : 'Selecciona un bien', bienLabel);
+        const pinned = selected && !matches.some((item) => item.id === selected.id);
+        if (pinned) select.add(new Option(`${bienLabel(selected)} (selección actual)`, String(selected.id)));
+        select.value = selected ? String(selected.id) : '';
+        find('[data-bien-search-summary]').textContent = query
+            ? `${matches.length} coincidencias en todos los bienes.${pinned ? ' Se conserva la selección actual aunque no coincida con la búsqueda.' : ''}` : '';
+        find('[data-selected-bien]').textContent = selected ? `Bien seleccionado: ${bienLabel(selected)}` : 'Ningún bien seleccionado.';
+    };
+    bienSearch.addEventListener('input', () => renderBienOptions());
     const updateOrigin = () => {
         const bien = selectedBien();
         const origin = options?.ambientes.find((item) => item.id === bien?.ambiente_id);
@@ -180,19 +197,20 @@ if (root) {
         try {
             const { data } = await window.axios.get(root.dataset.optionsUrl);
             options = data.data;
-            fill(createForm.elements.bien_id, options.bienes, 'Selecciona un bien', (item) => `ID ${item.id} · CBI ${item.cbi ?? '—'} · ${item.descripcion}`);
+            renderBienOptions(previous.bien_id);
             ['ordenado_por', 'ejecutado_por'].forEach((key) => fill(createForm.elements[key], options.responsables, 'Selecciona un usuario', userName));
             Object.entries(previous).forEach(([key, value]) => {
                 if (Array.from(createForm.elements[key].options).some((item) => item.value === value)) createForm.elements[key].value = value;
             });
             updateOrigin(); optionsLoaded = true; message.textContent = '';
         } catch (error) { message.textContent = errorText(error); find('[data-options-retry]').hidden = [401, 403].includes(error.response?.status); }
-        finally { busy(createDialog, false); find('[data-save-movement]').disabled = !optionsLoaded; }
+        finally { busy(createDialog, false); bienSearch.disabled = !optionsLoaded; find('[data-save-movement]').disabled = !optionsLoaded; }
     };
-    createForm.elements.bien_id.addEventListener('change', updateOrigin);
+    createForm.elements.bien_id.addEventListener('change', () => { renderBienOptions(); updateOrigin(); });
     find('[data-options-retry]').addEventListener('click', loadOptions);
     find('[data-new-movement]').addEventListener('click', () => {
         createForm.reset(); options = null; find('[data-origin-label]').value = '—';
+        bienSearch.value = ''; renderBienOptions('');
         const parts = Object.fromEntries(new Intl.DateTimeFormat('es-PE', {
             timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit',
             hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',

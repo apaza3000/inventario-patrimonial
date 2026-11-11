@@ -17,14 +17,16 @@
         </header>
         <p class="movement-flow-note">El registro genera una constancia pendiente de firma. La ubicación del bien cambia únicamente al subir el PDF firmado y finalizar el movimiento.</p>
         <p class="catalog-message" data-movement-notice role="status" aria-live="polite"></p>
-        <section class="catalog-filters" aria-labelledby="movement-lookup-title">
-            <div class="catalog-section-heading"><h2 id="movement-lookup-title">Consultar por ID</h2></div>
-            @unless ($canList)<p class="catalog-subtitle">Tu rol permite registrar movimientos y consultarlos por su ID. Conserva el ID obtenido al registrar para continuar el proceso de firma.</p>@endunless
+        @unless ($canList)
+        <details class="catalog-filters movement-lookup-secondary">
+            <summary>Consultar por ID</summary>
+            <p class="catalog-subtitle">Tu rol permite registrar movimientos y consultarlos por su ID. Conserva el ID obtenido al registrar para continuar el proceso de firma.</p>
             <form class="movement-lookup" data-movement-lookup-form>
                 <div class="catalog-form-grid"><label>ID del movimiento<input name="id" type="number" min="1" max="2147483647" step="1" required></label></div>
                 <button type="submit" class="catalog-secondary-button">Consultar movimiento</button>
             </form>
-        </section>
+        </details>
+        @endunless
         @if ($canList)
             <section class="catalog-filters" aria-labelledby="movement-search-title">
                 <div class="catalog-section-heading"><h2 id="movement-search-title">Buscar movimientos</h2><span>La búsqueda se limita a la página visible</span></div>
@@ -50,13 +52,17 @@
             <p class="catalog-form-message" data-form-message role="alert"></p>
             <button type="button" class="catalog-retry-button" data-options-retry hidden>Actualizar opciones</button>
             <div class="catalog-form-grid">
-                <label class="catalog-form-wide">Bien <span aria-hidden="true">*</span><select name="bien_id" required><option value="">Selecciona un bien</option></select></label>
+                <label class="catalog-form-wide">Buscar bien por CBI<input type="search" data-bien-search placeholder="Escribe el CBI, incluidos sus ceros iniciales" aria-describedby="movement-bien-search-help movement-bien-search-summary" disabled></label>
+                <p id="movement-bien-search-help" class="catalog-subtitle catalog-form-wide">La búsqueda incluye todos los bienes recibidos, sin limitarse a una página. Selecciona el bien para confirmar.</p>
+                <p id="movement-bien-search-summary" class="catalog-search-summary catalog-form-wide" data-bien-search-summary aria-live="polite"></p>
+                <label class="catalog-form-wide"><span class="movement-field-label">Bien <span aria-hidden="true">*</span></span><select name="bien_id" required><option value="">Selecciona un bien</option></select></label>
+                <p class="catalog-subtitle catalog-form-wide" data-selected-bien aria-live="polite"></p>
                 <label>Origen según ubicación actual<input type="text" data-origin-label readonly value="—"></label>
-                <label>Destino <span aria-hidden="true">*</span><select name="ambiente_destino_id" required><option value="">Selecciona un destino</option></select></label>
-                <label>Ordenado por <span aria-hidden="true">*</span><select name="ordenado_por" required><option value="">Selecciona un usuario</option></select></label>
-                <label>Ejecutado por <span aria-hidden="true">*</span><select name="ejecutado_por" required><option value="">Selecciona un usuario</option></select></label>
-                <label class="catalog-form-wide">Fecha y hora <span aria-hidden="true">*</span><input name="fecha_movimiento" type="datetime-local" step="1" required></label>
-                <label class="catalog-form-wide">Motivo <span aria-hidden="true">*</span><textarea name="motivo" maxlength="255" rows="2" required></textarea></label>
+                <label><span class="movement-field-label">Destino <span aria-hidden="true">*</span></span><select name="ambiente_destino_id" required><option value="">Selecciona un destino</option></select></label>
+                <label><span class="movement-field-label">Ordenado por <span aria-hidden="true">*</span></span><select name="ordenado_por" required><option value="">Selecciona un usuario</option></select></label>
+                <label><span class="movement-field-label">Ejecutado por <span aria-hidden="true">*</span></span><select name="ejecutado_por" required><option value="">Selecciona un usuario</option></select></label>
+                <label class="catalog-form-wide"><span class="movement-field-label">Fecha y hora <span aria-hidden="true">*</span></span><input name="fecha_movimiento" type="datetime-local" step="1" required></label>
+                <label class="catalog-form-wide"><span class="movement-field-label">Motivo <span aria-hidden="true">*</span></span><textarea name="motivo" maxlength="255" rows="2" required></textarea></label>
                 <label class="catalog-form-wide">Observaciones<textarea name="observaciones" maxlength="255" rows="3"></textarea></label>
             </div>
             <p class="movement-flow-note">Al guardar se generará el PDF. El bien permanecerá en su ubicación actual hasta cargar el documento firmado.</p>
@@ -98,7 +104,7 @@
             <p class="movement-flow-note" data-upload-warning></p>
             <p class="catalog-subtitle">Sube la constancia firmada por quien ordena. Una vez finalizado, el PDF firmado no podrá reemplazarse.</p>
             <p class="catalog-form-message" data-form-message role="alert"></p>
-            <div class="catalog-form-grid"><label class="catalog-form-wide">PDF firmado (máximo 10 MB) <span aria-hidden="true">*</span><input name="archivo" type="file" accept="application/pdf,.pdf" required></label></div>
+            <div class="catalog-form-grid"><label class="catalog-form-wide"><span class="movement-field-label">PDF firmado (máximo 10 MB) <span aria-hidden="true">*</span></span><input name="archivo" type="file" accept="application/pdf,.pdf" required></label></div>
             <div class="catalog-form-actions"><button type="button" class="catalog-secondary-button" data-close-dialog>Cancelar</button><button type="submit" class="catalog-primary-button">Subir PDF y finalizar</button></div>
         </form>
     </dialog>

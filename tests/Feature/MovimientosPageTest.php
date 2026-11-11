@@ -30,6 +30,10 @@ class MovimientosPageTest extends TestCase
                 ->assertSee('data-movements-list', false)
                 ->assertSee('La búsqueda se limita a la página visible')
                 ->assertSee('data-movement-create-form', false)
+                ->assertDontSee('data-movement-lookup-form', false)
+                ->assertDontSee('Consultar por ID')
+                ->assertSee('data-bien-search', false)
+                ->assertSee('La búsqueda incluye todos los bienes recibidos')
                 ->assertSee('data-movement-upload-form', false)
                 ->assertSee('Subir PDF firmado y finalizar')
                 ->assertSee('href="'.route('movimientos.index').'" class="menu-item active"', false);
@@ -40,6 +44,8 @@ class MovimientosPageTest extends TestCase
     {
         $this->actingAs($this->user('asistente'), 'web')->get('/movimientos')->assertOk()
             ->assertSee('data-movement-lookup-form', false)
+            ->assertSee('<details class="catalog-filters movement-lookup-secondary">', false)
+            ->assertSee('data-bien-search', false)
             ->assertSee('data-movement-create-form', false)
             ->assertSee('data-movement-detail-dialog', false)
             ->assertSee('data-movement-upload-form', false)
@@ -64,5 +70,13 @@ class MovimientosPageTest extends TestCase
     {
         $this->actingAs($this->user('coordinador'), 'web')->get('/home')->assertOk()
             ->assertDontSee('href="'.route('movimientos.index').'"', false);
+    }
+
+    public function test_required_field_titles_group_the_asterisk_with_the_label(): void
+    {
+        $response = $this->actingAs($this->user('superadmin'), 'web')->get('/movimientos')->assertOk();
+        foreach (['Bien', 'Destino', 'Ordenado por', 'Ejecutado por', 'Fecha y hora', 'Motivo', 'PDF firmado (máximo 10 MB)'] as $label) {
+            $response->assertSee('<span class="movement-field-label">'.$label.' <span aria-hidden="true">*</span></span>', false);
+        }
     }
 }

@@ -1355,6 +1355,21 @@ body.login-page {
     grid-template-columns: minmax(0, 260px);
 }
 
+[data-movements-root] .movement-lookup-secondary summary {
+    cursor: pointer;
+    color: #585d4d;
+    font-size: 14px;
+    font-weight: 650;
+}
+
+[data-movements-root] .movement-field-label {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px;
+    color: inherit;
+}
+
 .movement-badge-pending {
     background: #fbefca;
     color: #7b5a15;
