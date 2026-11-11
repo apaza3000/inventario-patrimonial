@@ -7,6 +7,7 @@
     class="catalog-page"
     data-catalog-root
     data-bienes-url="{{ url('/api/bienes') }}"
+    data-options-url="{{ url('/api/bienes/opciones') }}"
     data-sedes-url="{{ url('/api/sedes') }}"
     data-ambientes-url="{{ url('/api/ambientes') }}"
     data-estados-url="{{ url('/api/estados-bien') }}"
@@ -34,6 +35,12 @@
             <a href="{{ route('inventario.bienes') }}" class="catalog-tab active" aria-current="page">Catálogo de Bienes</a>
             <a href="{{ route('inventario.estaciones') }}" class="catalog-tab">Estaciones</a>
             <a href="{{ route('inventario.toma-inventario') }}" class="catalog-tab">Toma de Inventario</a>
+        </nav>
+
+        <nav class="catalog-category-tabs" aria-label="Categorías de bienes">
+            @foreach (['todos' => 'Todos', 'computadoras' => 'Computadoras', 'monitores' => 'Monitores', 'mobiliario' => 'Mobiliario', 'otros-equipos' => 'Otros equipos'] as $key => $label)
+                <button type="button" class="catalog-tab {{ $key === 'todos' ? 'active' : '' }}" data-catalog-category="{{ $key }}" aria-pressed="{{ $key === 'todos' ? 'true' : 'false' }}">{{ $label }}</button>
+            @endforeach
         </nav>
 
         <section class="catalog-filters" aria-labelledby="catalog-filters-title">
@@ -101,7 +108,8 @@
             <p class="catalog-form-message" data-bien-form-message role="alert" aria-live="polite"></p>
 
             <div class="catalog-form-grid">
-                <label>Descripción <span aria-hidden="true">*</span><input name="descripcion" type="text" maxlength="150" required></label>
+                <label class="catalog-form-wide"><span class="catalog-field-label">Categoría <span aria-hidden="true">*</span></span><select name="categoria" required><option value="">Selecciona una categoría</option><option value="computadoras">Computadoras</option><option value="monitores">Monitores</option><option value="mobiliario">Mobiliario</option><option value="otros-equipos">Otros equipos</option></select></label>
+                <label><span class="catalog-field-label">Descripción <span aria-hidden="true">*</span></span><input name="descripcion" type="text" maxlength="150" required></label>
                 <label>CBI<input name="cbi" type="text" maxlength="25"></label>
                 <label>Estado<select name="estado_id" data-estado-options><option value="">Sin asignar</option></select></label>
                 <label>Condición<select name="condicion_id" data-condicion-options><option value="">Sin asignar</option></select></label>
@@ -110,6 +118,40 @@
                 <label>Fecha de registro<input name="fecha_registro" type="date"></label>
                 <label class="catalog-form-wide">Observaciones<textarea name="observaciones" maxlength="255" rows="3"></textarea></label>
             </div>
+
+            <fieldset class="catalog-technical-form" data-category-fields="equipo" hidden disabled>
+                <legend>Características del equipo</legend>
+                <div class="catalog-form-grid">
+                    <label><span class="catalog-field-label">Tipo de equipo <span aria-hidden="true">*</span></span><select name="tipo_equipo_id" required></select></label>
+                    <label>Marca<select name="marca_id"></select></label>
+                    <label>Modelo<input name="modelo" maxlength="100"></label>
+                    <label>Número de serie<input name="serie" maxlength="100"></label>
+                </div>
+            </fieldset>
+            <fieldset class="catalog-technical-form" data-category-fields="computadoras" hidden disabled>
+                <legend>Características de cómputo</legend>
+                <div class="catalog-form-grid">
+                    <label>Procesador<input name="procesador" maxlength="100"></label>
+                    <label>Memoria RAM<input name="ram" maxlength="100"></label>
+                    <label>Almacenamiento<input name="almacenamiento" maxlength="150"></label>
+                    <label>Detalle adicional<textarea name="detalle_adicional" maxlength="255" rows="2"></textarea></label>
+                </div>
+            </fieldset>
+            <fieldset class="catalog-technical-form" data-category-fields="monitores" hidden disabled>
+                <legend>Características de pantalla</legend>
+                <div class="catalog-form-grid">
+                    <label>Tamaño de pantalla<input name="tamano_pantalla" maxlength="50"></label>
+                    <label>Detalle de pantalla<input name="detalle_pantalla" maxlength="150"></label>
+                </div>
+            </fieldset>
+            <fieldset class="catalog-technical-form" data-category-fields="mobiliario" hidden disabled>
+                <legend>Características del mobiliario</legend>
+                <div class="catalog-form-grid">
+                    <label><span class="catalog-field-label">Tipo de mueble <span aria-hidden="true">*</span></span><select name="tipo_mueble_id" required></select></label>
+                    <label>Material<input name="material" maxlength="150"></label>
+                    <label>Color<input name="color" maxlength="80"></label>
+                </div>
+            </fieldset>
 
             <div class="catalog-form-actions">
                 <button type="button" class="catalog-secondary-button" data-cancel-bien-dialog>Cancelar</button>
@@ -153,7 +195,8 @@
 
                 <section class="catalog-detail-section" aria-labelledby="bien-detail-technical-title">
                     <h3 id="bien-detail-technical-title">Información técnica disponible</h3>
-                    <p class="catalog-detail-empty">El detalle actual del bien no incluye especificaciones técnicas.</p>
+                    <p class="catalog-detail-empty" data-technical-empty hidden>No hay información técnica disponible.</p>
+                    <dl class="catalog-detail-grid" data-technical-fields></dl>
                 </section>
 
                 <section class="catalog-detail-section" aria-labelledby="bien-detail-observations-title">

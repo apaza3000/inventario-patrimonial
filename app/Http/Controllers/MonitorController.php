@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Monitor;
+use App\Models\Bien;
+use App\Models\EquipoComputo;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class MonitorController extends Controller
@@ -39,7 +42,15 @@ class MonitorController extends Controller
         }
 
         try {
-            $monitor = Monitor::create($data);
+            $monitor = DB::transaction(function () use ($data) {
+                if (Bien::whereKey($data['bien_id'])->lockForUpdate()->first() === null) {
+                    return response()->json(['message' => 'El bien ya no existe.'], 422);
+                }
+                if (EquipoComputo::whereKey($data['bien_id'])->exists()) {
+                    return response()->json(['message' => 'Un bien no puede ser computadora y monitor al mismo tiempo.'], 409);
+                }
+                return Monitor::create($data);
+            });
         } catch (QueryException $exception) {
             if (($exception->errorInfo[1] ?? null) === 1062) {
                 return $this->duplicateBien();
@@ -47,6 +58,8 @@ class MonitorController extends Controller
 
             throw $exception;
         }
+
+        if ($monitor instanceof JsonResponse) return $monitor;
 
         return response()->json([
             'message' => 'Se creó el monitor correctamente.',

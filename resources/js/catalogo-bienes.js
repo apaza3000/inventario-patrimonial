@@ -29,6 +29,18 @@ if (catalog) {
     let currentBienes = [];
     let pageLoaded = false;
     let detailRequestId = 0;
+    let pageRequestId = 0;
+    let category = 'todos';
+    let technicalOptions = null;
+    const categoryButtons = catalog.querySelectorAll('[data-catalog-category]');
+    const setCategory = (value) => {
+        category = value;
+        categoryButtons.forEach((button) => {
+            const active = button.dataset.catalogCategory === value;
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-pressed', String(active));
+        });
+    };
 
     const handleAuthError = (error) => {
         if (error.response?.status === 401) {
@@ -136,21 +148,28 @@ if (catalog) {
         count.textContent = `${total} ${total === 1 ? 'bien registrado' : 'bienes registrados'}`;
         previousButton.disabled = loading || currentPage <= 1;
         nextButton.disabled = loading || currentPage >= lastPage;
+        categoryButtons.forEach((button) => { button.disabled = loading; });
     };
 
     const loadPage = async (page, notice = '') => {
-        if (loading) return;
+        const requestId = ++pageRequestId;
         loading = true;
         previousButton.disabled = true;
         nextButton.disabled = true;
         pageSearch.disabled = true;
         retryButton.hidden = true;
         message.textContent = 'Cargando bienes…';
+        pageLoaded = false;
+        currentBienes = [];
+        rows.replaceChildren();
+        updatePagination();
 
         const [bienesResult, sedesResult] = await Promise.allSettled([
-            window.axios.get(catalog.dataset.bienesUrl, { params: { page } }),
+            window.axios.get(catalog.dataset.bienesUrl, { params: { page, categoria: category } }),
             loadSedes(),
         ]);
+
+        if (requestId !== pageRequestId) return;
 
         if (bienesResult.status === 'fulfilled') {
             const pagination = bienesResult.value.data;
@@ -178,12 +197,33 @@ if (catalog) {
         updatePagination();
     };
 
-    const fillOptions = (select, items, labelFor) => {
-        select.replaceChildren(new Option('Sin asignar', ''));
+    const fillOptions = (select, items, labelFor, placeholder = 'Sin asignar') => {
+        select.replaceChildren(new Option(placeholder, ''));
         for (const item of items) {
             select.add(new Option(labelFor(item), String(item.id)));
         }
     };
+
+    const syncTechnicalForm = () => {
+        const selected = form.elements.categoria.value;
+        catalog.querySelectorAll('[data-category-fields]').forEach((section) => {
+            const visible = section.dataset.categoryFields === selected || (section.dataset.categoryFields === 'equipo' && ['computadoras', 'monitores', 'otros-equipos'].includes(selected));
+            section.hidden = !visible;
+            section.disabled = !visible;
+        });
+        if (technicalOptions) {
+            const previous = form.elements.tipo_equipo_id.value;
+            fillOptions(form.elements.tipo_equipo_id, technicalOptions.tipos_equipo.filter((type) => type.categoria === selected), (type) => type.nombre, 'Selecciona un tipo');
+            if (Array.from(form.elements.tipo_equipo_id.options).some((option) => option.value === previous)) form.elements.tipo_equipo_id.value = previous;
+        }
+    };
+    form.elements.categoria.addEventListener('change', syncTechnicalForm);
+    categoryButtons.forEach((button) => button.addEventListener('click', () => {
+        if (loading) return;
+        setCategory(button.dataset.catalogCategory);
+        pageSearch.value = '';
+        loadPage(1);
+    }));
 
     const loadFormOptions = async () => {
         if (optionsLoaded) return true;
@@ -192,16 +232,21 @@ if (catalog) {
         formMessage.textContent = 'Cargando opciones…';
 
         try {
-            const [ambientes, estados, condiciones] = await Promise.all([
+            const [ambientes, estados, condiciones, technical] = await Promise.all([
                 window.axios.get(catalog.dataset.ambientesUrl),
                 window.axios.get(catalog.dataset.estadosUrl),
                 window.axios.get(catalog.dataset.condicionesUrl),
+                window.axios.get(catalog.dataset.optionsUrl),
             ]);
 
             fillOptions(form.elements.ambiente_id, ambientes.data.data, (ambiente) =>
                 ambiente.sede?.nombre ? `${ambiente.nombre} · ${ambiente.sede.nombre}` : ambiente.nombre);
             fillOptions(form.elements.estado_id, estados.data.data, (estado) => estado.nombre);
             fillOptions(form.elements.condicion_id, condiciones.data.data, (condicion) => condicion.nombre);
+            technicalOptions = technical.data.data;
+            fillOptions(form.elements.marca_id, technicalOptions.marcas, (item) => item.nombre);
+            fillOptions(form.elements.tipo_mueble_id, technicalOptions.tipos_mueble, (item) => item.nombre, 'Selecciona un tipo');
+            syncTechnicalForm();
 
             optionsLoaded = true;
             formMessage.textContent = '';
@@ -222,6 +267,8 @@ if (catalog) {
     };
 
     catalog.querySelector('[data-open-bien-dialog]').addEventListener('click', () => {
+        form.elements.categoria.value = category === 'todos' ? '' : category;
+        syncTechnicalForm();
         const today = new Date();
         form.elements.fecha_registro.value = [
             today.getFullYear(),
@@ -278,6 +325,26 @@ if (catalog) {
         if (sedesResult.status === 'rejected') handleAuthError(sedesResult.reason);
 
         const bien = bienResult.value.data.data;
+        const technical = catalog.querySelector('[data-technical-fields]');
+        technical.replaceChildren();
+        const equipment = bien.equipo;
+        const furniture = bien.mueble;
+        const fields = equipment ? [
+            ['Tipo de equipo', equipment.tipo_equipo?.nombre], ['Marca', equipment.marca?.nombre],
+            ['Modelo', equipment.modelo], ['Número de serie', equipment.serie],
+        ] : furniture ? [['Tipo de mueble', furniture.tipo_mueble?.nombre], ['Material', furniture.material], ['Color', furniture.color]] : [];
+        if (equipment?.equipo_computo) {
+            const pc = equipment.equipo_computo;
+            fields.push(['Procesador', pc.procesador], ['Memoria RAM', pc.ram], ['Almacenamiento', pc.almacenamiento], ['Detalle adicional', pc.detalle_adicional]);
+        }
+        if (equipment?.monitor) fields.push(['Tamaño de pantalla', equipment.monitor.tamano_pantalla ?? equipment.monitor.tamanio_pantalla], ['Detalle de pantalla', equipment.monitor.detalle_pantalla]);
+        fields.forEach(([label, value]) => {
+            const group = document.createElement('div');
+            const title = document.createElement('dt'); title.textContent = label;
+            const content = document.createElement('dd'); content.textContent = value === null || value === undefined || String(value).trim() === '' ? '—' : value;
+            group.append(title, content); technical.append(group);
+        });
+        catalog.querySelector('[data-technical-empty]').hidden = fields.length > 0;
         setDetail('id', bien.id);
         setDetail('cbi', bien.cbi);
         setDetail('descripcion', bien.descripcion);
@@ -301,7 +368,8 @@ if (catalog) {
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        if (!form.reportValidity() || !optionsLoaded) return;
+        if (saveButton.disabled || !form.reportValidity() || !optionsLoaded) return;
+        if (!form.elements.categoria.value) { formMessage.textContent = 'Selecciona una categoría.'; return; }
 
         const descripcion = form.elements.descripcion.value.trim();
         if (!descripcion) {
@@ -313,6 +381,7 @@ if (catalog) {
         const payload = {
             descripcion,
             activo: form.elements.activo.value === '1',
+            categoria: form.elements.categoria.value,
         };
 
         for (const field of ['cbi', 'observaciones', 'fecha_registro']) {
@@ -325,6 +394,13 @@ if (catalog) {
             if (value) payload[field] = Number(value);
         }
 
+        catalog.querySelectorAll('[data-category-fields]').forEach((section) => {
+            if (section.disabled) return;
+            section.querySelectorAll('[name]').forEach((input) => {
+                payload[input.name] = input.name.endsWith('_id') ? (input.value ? Number(input.value) : null) : (input.value.trim() || null);
+            });
+        });
+
         saveButton.disabled = true;
         formMessage.textContent = '';
 
@@ -332,9 +408,10 @@ if (catalog) {
             await window.axios.get(catalog.dataset.csrfUrl);
             await window.axios.post(catalog.dataset.bienesUrl, payload);
             closeDialog();
-            const newestPage = Math.max(1, Math.ceil((total + 1) / perPage));
             pageSearch.value = '';
-            await loadPage(newestPage, 'Bien registrado correctamente.');
+            setCategory(payload.categoria);
+            await loadPage(1, 'Bien registrado correctamente.');
+            if (lastPage > 1) await loadPage(lastPage, 'Bien registrado correctamente.');
         } catch (error) {
             if (!handleAuthError(error)) {
                 const errors = error.response?.data?.errors;

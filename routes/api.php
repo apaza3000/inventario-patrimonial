@@ -81,6 +81,7 @@ Route::middleware(['auth:web', 'usuario.activo'])->group(function () {
 
     Route::middleware('rol:superadmin')->group(function () {
         Route::get('/bienes', [BienController::class, 'index']);
+        Route::get('/bienes/opciones', [BienController::class, 'opciones']);
         Route::get('/bienes/{id}', [BienController::class, 'show'])->where('id', '[0-9]{1,10}');
         Route::post('/bienes', [BienController::class, 'store']);
         Route::match(['put', 'patch'], '/bienes/{id}', [BienController::class, 'update'])->where('id', '[0-9]{1,10}');

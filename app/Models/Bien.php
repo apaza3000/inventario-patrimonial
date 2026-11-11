@@ -49,6 +49,11 @@ class Bien extends Model
         return $this->hasOne(Equipo::class, 'bien_id');
     }
 
+    public function mueble(): HasOne
+    {
+        return $this->hasOne(Mueble::class, 'bien_id');
+    }
+
     public function mantenimientos(): HasMany
     {
         return $this->hasMany(Mantenimiento::class, 'bien_id');

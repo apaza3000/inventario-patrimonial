@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bien;
+use App\Models\Marca;
+use App\Models\TipoEquipo;
+use App\Models\TipoMueble;
+use App\Services\RegistroBienService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,6 +17,7 @@ use Illuminate\Validation\Rule;
 class BienController extends Controller
 {
     private const RELATIONS = ['ambiente', 'estado', 'condicion'];
+    private const TECHNICAL_RELATIONS = ['equipo.tipoEquipo', 'equipo.marca', 'equipo.equipoComputo', 'equipo.monitor', 'mueble.tipoMueble'];
 
     private const DEPENDENCIES = [
         'inventarios' => 'inventarios',
@@ -23,9 +28,18 @@ class BienController extends Controller
         'estacion_componentes' => 'componentes de estación',
     ];
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $bienes = Bien::with(self::RELATIONS)
+        $request->validate(['categoria' => ['sometimes', Rule::in(['todos', ...RegistroBienService::CATEGORIAS])]]);
+        $query = Bien::with(self::RELATIONS);
+        match ($request->input('categoria', 'todos')) {
+            'computadoras' => $query->whereHas('equipo.equipoComputo'),
+            'monitores' => $query->whereHas('equipo.monitor'),
+            'mobiliario' => $query->whereHas('mueble'),
+            'otros-equipos' => $query->whereHas('equipo', fn ($q) => $q->whereDoesntHave('equipoComputo')->whereDoesntHave('monitor')),
+            default => $query,
+        };
+        $bienes = $query
             ->orderBy('id')
             ->paginate(15);
 
@@ -34,13 +48,24 @@ class BienController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        $bien = Bien::with(self::RELATIONS)->find($id);
+        $bien = Bien::with([...self::RELATIONS, ...self::TECHNICAL_RELATIONS])->find($id);
 
         if ($bien === null) {
             return $this->notFound();
         }
 
         return response()->json(['data' => $bien]);
+    }
+
+    public function opciones(): JsonResponse
+    {
+        return response()->json(['data' => [
+            'marcas' => Marca::orderBy('nombre')->get(['id', 'nombre']),
+            'tipos_mueble' => TipoMueble::orderBy('nombre')->get(['id', 'nombre']),
+            'tipos_equipo' => TipoEquipo::orderBy('nombre')->get(['id', 'nombre'])->map(fn ($tipo) => [
+                'id' => $tipo->id, 'nombre' => $tipo->nombre, 'categoria' => RegistroBienService::categoriaTipo($tipo->nombre),
+            ]),
+        ]]);
     }
 
     public function store(Request $request): JsonResponse
@@ -52,7 +77,9 @@ class BienController extends Controller
         }
 
         try {
-            $bien = Bien::create($data);
+            $bien = $request->exists('categoria')
+                ? app(RegistroBienService::class)->registrar($data, $request->all())
+                : Bien::create($data);
         } catch (QueryException $exception) {
             if (($exception->errorInfo[1] ?? null) === 1062) {
                 return $this->duplicateCbi();
@@ -63,7 +90,7 @@ class BienController extends Controller
 
         return response()->json([
             'message' => 'Se creó el bien correctamente.',
-            'data' => $bien->load(self::RELATIONS),
+            'data' => $bien->load($request->exists('categoria') ? [...self::RELATIONS, ...self::TECHNICAL_RELATIONS] : self::RELATIONS),
         ], 201);
     }
 
