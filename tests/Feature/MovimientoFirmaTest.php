@@ -10,6 +10,7 @@ use App\Models\Usuario;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -212,5 +213,71 @@ class MovimientoFirmaTest extends TestCase
         $this->postJson('/api/movimientos', $data)
             ->assertUnprocessable()
             ->assertJsonValidationErrors('fecha_movimiento');
+    }
+
+    public function test_inactive_destination_is_rejected_without_a_record_or_generated_pdf(): void
+    {
+        $data = $this->movementData();
+        Ambiente::whereKey($data['ambiente_destino_id'])->update(['activo' => false]);
+        $before = Movimiento::count();
+        $originalLocation = Bien::findOrFail($data['bien_id'])->ambiente_id;
+
+        $this->postJson('/api/movimientos', $data)->assertUnprocessable()
+            ->assertJsonValidationErrors('ambiente_destino_id');
+
+        $this->assertSame($before, Movimiento::count());
+        $this->assertSame($originalLocation, Bien::findOrFail($data['bien_id'])->ambiente_id);
+        $this->assertSame([], Storage::disk('local')->allFiles('movimientos'));
+    }
+
+    public function test_registration_rechecks_destination_after_initial_validation(): void
+    {
+        $data = $this->movementData();
+        $before = Movimiento::count();
+        $changed = false;
+        // Simulate deactivation between validation and the transactional recheck.
+        Event::listen('eloquent.retrieved: '.Bien::class, function () use ($data, &$changed): void {
+            if (! $changed) {
+                $changed = true;
+                Ambiente::whereKey($data['ambiente_destino_id'])->update(['activo' => false]);
+            }
+        });
+
+        $this->postJson('/api/movimientos', $data)->assertConflict();
+
+        $this->assertTrue($changed);
+        $this->assertSame($before, Movimiento::count());
+        $this->assertSame([], Storage::disk('local')->allFiles('movimientos'));
+    }
+
+    public function test_deactivated_destination_blocks_finalization_and_preserves_documents_until_retry(): void
+    {
+        $movement = $this->createPending();
+        $original = $movement->getAttributes();
+        $location = $movement->bien->ambiente_id;
+        $pdf = Storage::disk('local')->get($movement->pdf_generado_ruta);
+        Ambiente::whereKey($movement->ambiente_destino_id)->update(['activo' => false]);
+
+        $this->post("/api/movimientos/{$movement->id}/pdf-firmado", [
+            'archivo' => $this->signedPdf(),
+        ], ['Accept' => 'application/json'])->assertConflict()
+            ->assertJsonPath('message', 'El ambiente de destino está inactivo o ya no existe. No se puede completar el movimiento. '
+                .'El bien conserva su ubicación y el PDF generado permanece disponible. '
+                .'No se guardó el PDF firmado; conserve su archivo y vuelva a enviarlo cuando el destino esté activo.');
+
+        $this->assertSame($original, $movement->fresh()->getAttributes());
+        $this->assertSame($location, $movement->bien->fresh()->ambiente_id);
+        $this->assertSame($pdf, Storage::disk('local')->get($movement->pdf_generado_ruta));
+        $this->assertSame([$movement->pdf_generado_ruta], Storage::disk('local')->allFiles("movimientos/{$movement->id}"));
+        $this->get("/api/movimientos/{$movement->id}/pdf-generado")->assertOk();
+
+        // The same pending movement remains usable once the destination is active.
+        Ambiente::whereKey($movement->ambiente_destino_id)->update(['activo' => true]);
+        $this->post("/api/movimientos/{$movement->id}/pdf-firmado", [
+            'archivo' => $this->signedPdf(),
+        ], ['Accept' => 'application/json'])->assertOk()
+            ->assertJsonPath('data.estado', Movimiento::ESTADO_FINALIZADO);
+        $this->assertSame($movement->ambiente_destino_id, $movement->bien->fresh()->ambiente_id);
+        Storage::disk('local')->assertExists($movement->fresh()->pdf_firmado_ruta);
     }
 }

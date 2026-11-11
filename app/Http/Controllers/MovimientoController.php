@@ -70,7 +70,10 @@ class MovimientoController extends Controller
         $validator = Validator::make($request->all(), [
             'bien_id' => ['required', 'integer', 'between:1,2147483647', 'exists:bienes,id'],
             'ambiente_origen_id' => ['sometimes', 'nullable', 'integer', 'between:1,2147483647', 'exists:ambientes,id'],
-            'ambiente_destino_id' => ['required', 'integer', 'between:1,2147483647', 'exists:ambientes,id'],
+            'ambiente_destino_id' => [
+                'required', 'integer', 'between:1,2147483647',
+                Rule::exists('ambientes', 'id')->where(fn ($query) => $query->where('activo', true)),
+            ],
             'ordenado_por' => [
                 'required',
                 'integer',
@@ -107,6 +110,12 @@ class MovimientoController extends Controller
                         'message' => 'Los datos enviados no son válidos.',
                         'errors' => ['bien_id' => ['El bien no existe.']],
                     ], 422);
+                }
+
+                // Recheck under a lock in case the destination changed after validation.
+                $destino = Ambiente::whereKey($data['ambiente_destino_id'])->lockForUpdate()->first();
+                if ($destino === null || ! $destino->activo) {
+                    return $this->inactiveDestination();
                 }
 
                 if (Movimiento::where('bien_id', $bien->id)
@@ -263,6 +272,12 @@ class MovimientoController extends Controller
                     ], 409);
                 }
 
+                $destino = Ambiente::whereKey($movimiento->ambiente_destino_id)->lockForUpdate()->first();
+                if ($destino === null || ! $destino->activo) {
+                    // Preserve the pending record, original location and generated document.
+                    return $this->inactiveDestination(true);
+                }
+
                 $signedPath = $request->file('archivo')->storeAs(
                     "movimientos/{$movimiento->id}",
                     'firmado-'.Str::uuid().'.pdf',
@@ -292,6 +307,17 @@ class MovimientoController extends Controller
 
             throw $exception;
         }
+    }
+
+    private function inactiveDestination(bool $signing = false): JsonResponse
+    {
+        return response()->json([
+            'message' => 'El ambiente de destino está inactivo o ya no existe. No se puede completar el movimiento. '
+                .($signing
+                    ? 'El bien conserva su ubicación y el PDF generado permanece disponible. '
+                        .'No se guardó el PDF firmado; conserve su archivo y vuelva a enviarlo cuando el destino esté activo.'
+                    : 'El bien conserva su ubicación. No se registró el movimiento ni se generó un PDF.'),
+        ], 409);
     }
 
     public function downloadSigned(int $id): StreamedResponse|JsonResponse
