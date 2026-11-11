@@ -1129,13 +1129,6 @@ body.login-page {
 [data-catalog-root] .catalog-category-tabs button.active { background: var(--amarillo); }
 [data-catalog-root] .catalog-category-tabs button:disabled { cursor: wait; }
 
-[data-catalog-root] .catalog-field-label {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 4px;
-    color: inherit;
-}
-
 [data-catalog-root] .catalog-technical-form {
     min-width: 0;
     margin-top: 20px;
@@ -1397,14 +1390,6 @@ body.login-page {
     font-weight: 650;
 }
 
-[data-movements-root] .movement-field-label {
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 4px;
-    color: inherit;
-}
-
 .movement-badge-pending {
     background: #fbefca;
     color: #7b5a15;
@@ -1441,13 +1426,6 @@ body.login-page {
 
 [data-inventory-root] .catalog-filter-grid {
     grid-template-columns: minmax(0, 620px);
-}
-
-[data-inventory-root] .inventory-field-label {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 4px;
-    color: inherit;
 }
 
 [data-inventory-root] .inventory-picker-table {
@@ -1492,6 +1470,16 @@ body.login-page {
 [data-maintenance-root] .catalog-detail-grid dd {
     white-space: pre-wrap;
 }
+
+[data-maintenance-root] .maintenance-breadcrumb-link { color: inherit; text-decoration: none; text-underline-offset: 3px; transition: opacity 150ms ease; }
+[data-maintenance-root] .maintenance-breadcrumb-link:hover,
+[data-maintenance-root] .maintenance-breadcrumb-link:focus-visible { text-decoration: underline; opacity: 0.8; }
+[data-maintenance-root] a.catalog-primary-button,
+[data-maintenance-root] a.catalog-secondary-button { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+[data-maintenance-root] .maintenance-search-action { display: flex; align-items: flex-end; }
+[data-maintenance-root] .maintenance-bien-card { margin-top: 18px; }
+[data-maintenance-root] .maintenance-bien-card h3 { margin-bottom: 14px; color: #585d4d; }
+[data-maintenance-root] [hidden] { display: none !important; }
 
 .maintenance-form-dialog {
     width: min(960px, calc(100% - 24px));
@@ -1661,6 +1649,21 @@ body.login-page {
 }
 
 .catalog-form-grid label span {
+    color: #ae4620;
+}
+
+/* Keep the label and its required marker in one grid item in every form. */
+:is(.catalog-form-grid, .maintenance-picker) :is(.form-field-label, .catalog-field-label, .inventory-field-label, .movement-field-label, .maintenance-field-label) {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    min-width: 0;
+    max-width: 100%;
+    color: inherit;
+}
+
+:is(.catalog-form-grid, .maintenance-picker) :is(.form-field-label, .catalog-field-label, .inventory-field-label, .movement-field-label, .maintenance-field-label) > span[aria-hidden="true"] {
+    flex-shrink: 0;
     color: #ae4620;
 }
 

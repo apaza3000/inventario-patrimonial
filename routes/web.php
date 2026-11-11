@@ -42,6 +42,10 @@ Route::view('/mantenimientos', 'mantenimientos.index')
     ->middleware(['auth:web', 'usuario.activo', 'rol:coordinador'])
     ->name('mantenimientos.index');
 
+Route::view('/mantenimientos/registrar', 'mantenimientos.create')
+    ->middleware(['auth:web', 'usuario.activo', 'rol:superadmin'])
+    ->name('mantenimientos.create');
+
 Route::view('/reportes', 'reportes.index')
     ->middleware(['auth:web', 'usuario.activo', 'rol:asistente,coordinador'])
     ->name('reportes.index');

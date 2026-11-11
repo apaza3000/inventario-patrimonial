@@ -70,7 +70,7 @@
             </div>
             <p class="catalog-form-message" data-form-message role="alert"></p>
             <div class="catalog-form-grid">
-                <label>Código <span aria-hidden="true">*</span><input name="codigo" maxlength="20" required></label>
+                <label><span class="form-field-label">Código <span aria-hidden="true">*</span></span><input name="codigo" maxlength="20" required></label>
                 <label>Activo<select name="activo"><option value="1">Sí</option><option value="0">No</option></select></label>
                 <label class="catalog-form-wide">Descripción<input name="descripcion" maxlength="100"></label>
             </div>
@@ -177,7 +177,7 @@
             <p data-withdraw-bien class="stations-selection"></p>
             <p class="catalog-subtitle">La asignación quedará en el historial y no podrá reactivarse.</p>
             <p class="catalog-form-message" data-form-message role="alert"></p>
-            <div class="catalog-form-grid"><label>Fecha de retiro <span aria-hidden="true">*</span><input name="fecha_retiro" type="date" required></label></div>
+            <div class="catalog-form-grid"><label><span class="form-field-label">Fecha de retiro <span aria-hidden="true">*</span></span><input name="fecha_retiro" type="date" required></label></div>
             <div class="catalog-form-actions">
                 <button type="button" class="catalog-secondary-button" data-close-dialog>Cancelar</button>
                 <button type="submit" class="catalog-primary-button">Retirar componente</button>

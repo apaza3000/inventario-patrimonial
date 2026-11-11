@@ -40,6 +40,7 @@ class MantenimientosPageTest extends TestCase
         foreach (['superadmin', 'administrador', 'director'] as $role) {
             $this->actingAs($this->user($role), 'web')->get('/mantenimientos')->assertOk()
                 ->assertSee('Registro de Mantenimientos')->assertSee('La búsqueda se limita a la página visible')
+                ->assertSee('href="'.route('mantenimientos.create').'"', false)
                 ->assertSee('data-maintenance-form', false)->assertSee('data-maintenance-delete-form', false)
                 ->assertSee('data-maintenance-detail-dialog', false)->assertSee('Sin asignar')
                 ->assertSee('definitiva y no se puede deshacer')
@@ -66,6 +67,27 @@ class MantenimientosPageTest extends TestCase
             ->assertDontSee('data-maintenance-delete-form', false)->assertDontSee('data-users-url', false)
             ->assertDontSee('data-bienes-url', false)->assertDontSee('data-condition-section', false)
             ->assertDontSee('data-conditions-url', false);
+    }
+
+    public function test_registration_page_requires_active_full_access_and_reuses_the_institutional_layout(): void
+    {
+        $this->get('/mantenimientos/registrar')->assertRedirect('/login');
+        foreach (['coordinador', 'asistente'] as $role) {
+            $this->actingAs($this->user($role), 'web')->get('/mantenimientos/registrar')->assertForbidden();
+        }
+        $this->actingAs($this->user('superadmin', false), 'web')->get('/mantenimientos/registrar')->assertForbidden();
+        foreach (['superadmin', 'administrador', 'director'] as $role) {
+            $response = $this->actingAs($this->user($role), 'web')->get('/mantenimientos/registrar')->assertOk()
+                ->assertSee('data-maintenance-form-page', false)->assertSee('data-bien-search-button', false)
+                ->assertSee('data-bien-technical-fields', false)->assertSee('Mantener la condición actual')
+                ->assertSee('Sin asignar')->assertDontSee('<dialog', false)->assertDontSee('data-bien-next', false)
+                ->assertSee('href="'.route('mantenimientos.index').'" class="maintenance-breadcrumb-link">Mantenimiento</a>', false)
+                ->assertSee('href="'.route('mantenimientos.index').'" class="catalog-secondary-button" data-cancel-registration>Cancelar</a>', false)
+                ->assertSee('href="'.route('mantenimientos.index').'" class="menu-item active"', false);
+            foreach (['Bien', 'Seleccionar bien', 'Tipo de mantenimiento', 'Fecha de mantenimiento', 'Descripción del mantenimiento'] as $label) {
+                $response->assertSee('<span class="maintenance-field-label">'.$label.' <span aria-hidden="true">*</span></span>', false);
+            }
+        }
     }
 
     public function test_real_api_accepts_nullable_technician_and_supports_detail_edit_delete_and_validation(): void

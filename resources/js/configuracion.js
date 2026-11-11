@@ -157,7 +157,10 @@ if (config) {
     };
     const buildField = (field, item, key) => {
         const label = element('label', undefined, find('[data-form-fields]'));
-        element('span', `${field.label}${field.required || (field.key === 'password' && !item) ? ' *' : ''}`, label);
+        const title = element('span', field.label, label, 'form-field-label');
+        const requiredMarker = element('span', '*', title, 'form-required-marker');
+        requiredMarker.setAttribute('aria-hidden', 'true');
+        requiredMarker.hidden = !Boolean(field.required || (field.key === 'password' && !item));
         const input = document.createElement(field.type === 'select' ? 'select' : 'input');
         input.name = field.key;
         if (field.type !== 'select') input.type = field.type;
@@ -170,7 +173,7 @@ if (config) {
         if (field.type === 'password') { input.autocomplete = 'new-password'; element('small', item ? 'Deja vacío para conservar la contraseña actual.' : 'Entre 8 y 72 caracteres.', label, 'config-field-note'); }
         const locked = Boolean((key === 'roles' && field.key === 'nombre' && reserved.includes(item?.nombre)) || (key === 'usuarios' && field.key === 'activo' && String(item?.id) === config.dataset.userId));
         if (locked) element('small', field.key === 'nombre' ? 'El nombre del rol reservado no puede modificarse.' : 'No puedes desactivar tu propia cuenta.', label, 'config-field-note');
-        label.append(input); controls.set(field.key, { input, locked });
+        label.append(input); controls.set(field.key, { input, locked, requiredMarker });
         return { input, label };
     };
     const fillSelect = (input, items, selected, required) => {
@@ -211,6 +214,7 @@ if (config) {
         const isCoordinator = role.selectedOptions[0]?.textContent.replace(' (selección actual)', '') === 'coordinador';
         const specialty = controls.get('especialidad_id').input;
         specialty.required = isCoordinator;
+        controls.get('especialidad_id').requiredMarker.hidden = !isCoordinator;
         controls.get('especialidad_id').locked = !isCoordinator;
         if (!isCoordinator) specialty.value = '';
         editorState();

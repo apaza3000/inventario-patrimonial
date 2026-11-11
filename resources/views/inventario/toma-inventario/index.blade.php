@@ -106,7 +106,7 @@
                 <p class="stations-selection" data-edit-identity></p>
                 <p class="catalog-subtitle">Bien ID y año identifican el registro y no se pueden modificar.</p>
                 <p class="catalog-form-message" data-form-message role="alert"></p>
-                <div class="catalog-form-grid"><label class="catalog-form-wide">Inventario <span aria-hidden="true">*</span><input name="inventario" type="text" maxlength="20" required></label></div>
+                <div class="catalog-form-grid"><label class="catalog-form-wide"><span class="form-field-label">Inventario <span aria-hidden="true">*</span></span><input name="inventario" type="text" maxlength="20" required></label></div>
                 <div class="catalog-form-actions"><button type="button" class="catalog-secondary-button" data-close-dialog>Cancelar</button><button type="submit" class="catalog-primary-button">Guardar cambios</button></div>
             </form>
         </dialog>

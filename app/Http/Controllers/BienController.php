@@ -30,8 +30,14 @@ class BienController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $request->validate(['categoria' => ['sometimes', Rule::in(['todos', ...RegistroBienService::CATEGORIAS])]]);
+        $request->validate([
+            'categoria' => ['sometimes', Rule::in(['todos', ...RegistroBienService::CATEGORIAS])],
+            'cbi' => ['sometimes', 'required', 'string', 'max:25'],
+        ]);
         $query = Bien::with(self::RELATIONS);
+        if ($request->has('cbi')) {
+            $query->where('cbi', $request->input('cbi'));
+        }
         match ($request->input('categoria', 'todos')) {
             'computadoras' => $query->whereHas('equipo.equipoComputo'),
             'monitores' => $query->whereHas('equipo.monitor'),
