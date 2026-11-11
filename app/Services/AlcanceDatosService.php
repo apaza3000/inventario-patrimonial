@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Equipo;
+use App\Models\Bien;
 use App\Models\Inventario;
 use App\Models\Mantenimiento;
 use App\Models\Usuario;
@@ -58,9 +59,7 @@ class AlcanceDatosService
         }
 
         if ($rol === 'asistente') {
-            return $query->whereHas('bien.ambiente.tipoAmbiente', function (Builder $query) {
-                $query->where('nombre', 'LABORATORIO');
-            });
+            return $query->whereIn('bien_id', $this->bienesInventario($usuario)->select('bienes.id'));
         }
 
         if ($rol === 'coordinador' && $usuario->especialidad_id !== null) {
@@ -69,6 +68,21 @@ class AlcanceDatosService
                 ->whereHas('bien.ambiente', function (Builder $query) use ($usuario) {
                     $query->where('especialidad_id', $usuario->especialidad_id);
                 });
+        }
+
+        return $query->whereRaw('1 = 0');
+    }
+
+    public function bienesInventario(Usuario $usuario): Builder
+    {
+        $query = Bien::query();
+
+        if ($this->tieneAccesoCompleto($usuario)) {
+            return $query;
+        }
+
+        if ($this->rol($usuario) === 'asistente') {
+            return $query->whereHas('ambiente.tipoAmbiente', fn (Builder $query) => $query->where('nombre', 'LABORATORIO'));
         }
 
         return $query->whereRaw('1 = 0');

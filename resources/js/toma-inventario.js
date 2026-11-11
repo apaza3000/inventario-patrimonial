@@ -141,7 +141,7 @@ if (root) {
                 const actions = cell(row, '');
                 actions.className = 'catalog-row-actions inventory-row-actions';
                 action(actions, 'Ver detalle', () => showDetail(item));
-                if (createDialog) {
+                if (find('[data-edit-inventory-dialog]')) {
                     action(actions, 'Editar', () => openEdit(item));
                     action(actions, 'Eliminar', () => openDelete(item));
                 }
@@ -232,51 +232,53 @@ if (root) {
             } catch (error) { messageFor(createForm).textContent = errorText(error); }
             finally { busy(createDialog, false); picker.controls(); selection(); }
         });
-        openEdit = async (record) => {
-            editing = { bien_id: record.bien_id, anio: record.anio };
-            editForm.reset(); editDialog.showModal(); busy(editDialog, true);
-            find('[data-edit-identity]').textContent = `Bien ID ${record.bien_id} · Año ${record.anio}`;
-            messageFor(editForm).textContent = 'Cargando registro…';
-            try {
-                const { data } = await window.axios.get(recordUrl(editing));
-                editForm.elements.inventario.value = data.data.inventario;
-                busy(editDialog, false); messageFor(editForm).textContent = '';
-            } catch (error) {
-                busy(editDialog, false);
-                editForm.querySelector('[type="submit"]').disabled = true;
-                messageFor(editForm).textContent = errorText(error);
-            }
-        };
-        editForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            if (editDialog.dataset.busy === '1' || !editForm.reportValidity()) return;
-            const inventario = inventoryValue(editForm);
-            if (inventario === null) return;
-            busy(editDialog, true); messageFor(editForm).textContent = '';
-            try {
-                // The composite identity stays in the URL; only inventario is editable.
-                await write('patch', recordUrl(editing), { inventario });
-                editDialog.close(); await inventoryList.load(undefined, 'Inventario actualizado correctamente.');
-            } catch (error) { messageFor(editForm).textContent = errorText(error); }
-            finally { busy(editDialog, false); }
-        });
-        openDelete = (record) => {
-            deleting = { bien_id: record.bien_id, anio: record.anio };
-            busy(deleteDialog, false);
-            messageFor(deleteForm).textContent = '';
-            find('[data-delete-identity]').textContent = `¿Eliminar el inventario ${record.inventario} del bien ID ${record.bien_id}, año ${record.anio}?`;
-            deleteDialog.showModal();
-        };
-        deleteForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            if (deleteDialog.dataset.busy === '1') return;
-            busy(deleteDialog, true); messageFor(deleteForm).textContent = '';
-            try {
-                await write('delete', recordUrl(deleting));
-                deleteDialog.close(); await inventoryList.load(undefined, 'Registro de inventario eliminado correctamente.');
-            } catch (error) { messageFor(deleteForm).textContent = errorText(error); }
-            finally { busy(deleteDialog, false); }
-        });
+        if (editDialog && deleteDialog) {
+            openEdit = async (record) => {
+                editing = { bien_id: record.bien_id, anio: record.anio };
+                editForm.reset(); editDialog.showModal(); busy(editDialog, true);
+                find('[data-edit-identity]').textContent = `Bien ID ${record.bien_id} · Año ${record.anio}`;
+                messageFor(editForm).textContent = 'Cargando registro…';
+                try {
+                    const { data } = await window.axios.get(recordUrl(editing));
+                    editForm.elements.inventario.value = data.data.inventario;
+                    busy(editDialog, false); messageFor(editForm).textContent = '';
+                } catch (error) {
+                    busy(editDialog, false);
+                    editForm.querySelector('[type="submit"]').disabled = true;
+                    messageFor(editForm).textContent = errorText(error);
+                }
+            };
+            editForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (editDialog.dataset.busy === '1' || !editForm.reportValidity()) return;
+                const inventario = inventoryValue(editForm);
+                if (inventario === null) return;
+                busy(editDialog, true); messageFor(editForm).textContent = '';
+                try {
+                    // The composite identity stays in the URL; only inventario is editable.
+                    await write('patch', recordUrl(editing), { inventario });
+                    editDialog.close(); await inventoryList.load(undefined, 'Inventario actualizado correctamente.');
+                } catch (error) { messageFor(editForm).textContent = errorText(error); }
+                finally { busy(editDialog, false); }
+            });
+            openDelete = (record) => {
+                deleting = { bien_id: record.bien_id, anio: record.anio };
+                busy(deleteDialog, false);
+                messageFor(deleteForm).textContent = '';
+                find('[data-delete-identity]').textContent = `¿Eliminar el inventario ${record.inventario} del bien ID ${record.bien_id}, año ${record.anio}?`;
+                deleteDialog.showModal();
+            };
+            deleteForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                if (deleteDialog.dataset.busy === '1') return;
+                busy(deleteDialog, true); messageFor(deleteForm).textContent = '';
+                try {
+                    await write('delete', recordUrl(deleting));
+                    deleteDialog.close(); await inventoryList.load(undefined, 'Registro de inventario eliminado correctamente.');
+                } catch (error) { messageFor(deleteForm).textContent = errorText(error); }
+                finally { busy(deleteDialog, false); }
+            });
+        }
     }
     inventoryList.load(1);
 }

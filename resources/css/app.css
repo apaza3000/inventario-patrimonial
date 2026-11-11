@@ -1408,6 +1408,39 @@ body.login-page {
     grid-template-columns: minmax(0, 620px);
 }
 
+[data-inventory-root] .inventory-field-label {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    color: inherit;
+}
+
+[data-inventory-root] .inventory-picker-table {
+    min-width: 0;
+    table-layout: fixed;
+}
+
+[data-inventory-root] .inventory-picker-select { width: 108px; }
+[data-inventory-root] .inventory-picker-id { width: 76px; }
+[data-inventory-root] .inventory-picker-cbi { width: 160px; }
+
+[data-inventory-root] .inventory-picker-table th,
+[data-inventory-root] .inventory-picker-table td {
+    padding: 12px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+[data-inventory-root] .inventory-picker-table td:first-child {
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    [data-inventory-root] .inventory-picker-table {
+        min-width: 480px;
+    }
+}
+
 [data-maintenance-root] .catalog-filter-grid {
     grid-template-columns: minmax(0, 620px);
 }

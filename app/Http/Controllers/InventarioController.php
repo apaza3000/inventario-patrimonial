@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Inventario;
+use App\Models\Bien;
 use App\Services\AlcanceDatosService;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Eloquent\Builder;
@@ -41,6 +42,14 @@ class InventarioController extends Controller
         return response()->json(['data' => $inventario]);
     }
 
+    public function bienes(Request $request): JsonResponse
+    {
+        return response()->json(
+            $this->alcance->bienesInventario($request->user('web'))
+                ->orderBy('id')->paginate(15, ['id', 'cbi', 'descripcion'])
+        );
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $this->validatedData($request);
@@ -50,7 +59,18 @@ class InventarioController extends Controller
         }
 
         try {
-            $created = DB::transaction(function () use ($data) {
+            $created = DB::transaction(function () use ($data, $request) {
+                // Share the asset lock with movements while checking its current location.
+                if (Bien::whereKey($data['bien_id'])->lockForUpdate()->first() === null) {
+                    return $this->invalidBien();
+                }
+
+                if (! $this->alcance->bienesInventario($request->user('web'))->whereKey($data['bien_id'])->exists()) {
+                    return response()->json([
+                        'message' => 'Solo puede registrar inventarios de bienes en ambientes de tipo LABORATORIO.',
+                    ], 403);
+                }
+
                 if (DB::table('inventarios')
                     ->where('bien_id', $data['bien_id'])
                     ->where('anio', $data['anio'])
@@ -70,6 +90,10 @@ class InventarioController extends Controller
             }
 
             throw $exception;
+        }
+
+        if ($created instanceof JsonResponse) {
+            return $created;
         }
 
         if (! $created) {

@@ -40,11 +40,11 @@ class TomaInventarioPageTest extends TestCase
         }
     }
 
-    public function test_assistant_has_read_only_view_and_sidebar_entry_with_export_and_detail(): void
+    public function test_assistant_has_registration_and_sidebar_entry_with_export_and_detail(): void
     {
         $this->actingAs($this->user('asistente'), 'web')->get('/inventario/toma-inventario')
             ->assertOk()
-            ->assertSee('Solo consulta: inventarios de bienes en ambientes de tipo LABORATORIO.')
+            ->assertSee('Consulta y registro: inventarios de bienes en ambientes de tipo LABORATORIO.')
             ->assertSee('La búsqueda se limita a la página visible')
             ->assertSee('data-inventories-url="'.url('/api/inventarios').'"', false)
             ->assertSee('data-inventory-detail-dialog', false)
@@ -53,10 +53,10 @@ class TomaInventarioPageTest extends TestCase
             ->assertSee('aria-disabled="true" title="Sin permiso para esta sección">Catálogo de Bienes', false)
             ->assertSee('aria-disabled="true" title="Sin permiso para esta sección">Estaciones', false)
             ->assertSee('href="'.route('inventario.toma-inventario').'" class="menu-item active"', false)
-            ->assertDontSee('data-create-inventory-form', false)
+            ->assertSee('data-create-inventory-form', false)
+            ->assertSee('data-bienes-url="'.url('/api/inventarios/bienes').'"', false)
             ->assertDontSee('data-edit-inventory-form', false)
-            ->assertDontSee('data-delete-inventory-form', false)
-            ->assertDontSee('data-bienes-url', false);
+            ->assertDontSee('data-delete-inventory-form', false);
     }
 
     public function test_catalog_and_stations_link_to_inventory_taking(): void
@@ -104,8 +104,8 @@ class TomaInventarioPageTest extends TestCase
         $this->assertNotNull($outside);
         $this->getJson('/api/inventarios/'.$outside->bien_id.'/'.$outside->anio)->assertNotFound();
 
-        // Middleware rejects these requests before any database write occurs.
-        $this->postJson('/api/inventarios', [])->assertForbidden();
+        // Invalid registration is rejected before any write; editing/deleting remain forbidden.
+        $this->postJson('/api/inventarios', [])->assertUnprocessable();
         $this->patchJson('/api/inventarios/'.$first['bien_id'].'/'.$first['anio'], [])->assertForbidden();
         $this->deleteJson('/api/inventarios/'.$first['bien_id'].'/'.$first['anio'])->assertForbidden();
     }

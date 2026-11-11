@@ -3,12 +3,13 @@
 @section('content')
 @php
     $canManage = app(\App\Services\AlcanceDatosService::class)->tieneAccesoCompleto(auth('web')->user());
+    $canCreate = $canManage || auth('web')->user()?->rol?->nombre === 'asistente';
 @endphp
 <div class="catalog-page" data-inventory-root
     data-inventories-url="{{ url('/api/inventarios') }}"
     data-login-url="{{ route('login') }}"
-    @if ($canManage)
-        data-bienes-url="{{ url('/api/bienes') }}"
+    @if ($canCreate)
+        data-bienes-url="{{ url($canManage ? '/api/bienes' : '/api/inventarios/bienes') }}"
         data-csrf-url="{{ url('/sanctum/csrf-cookie') }}"
     @endif
 >
@@ -21,7 +22,7 @@
             <div><p class="catalog-eyebrow">Inventario patrimonial</p><h1>Toma de Inventario</h1>
                 <p class="catalog-subtitle">Consulta los registros de inventario de cada bien y año.</p>
             </div>
-            @if ($canManage)
+            @if ($canCreate)
                 <button type="button" class="catalog-primary-button" data-new-inventory>Registrar inventario</button>
             @endif
         </header>
@@ -36,7 +37,7 @@
             <a href="{{ route('inventario.toma-inventario') }}" class="catalog-tab active" aria-current="page">Toma de Inventario</a>
         </nav>
         <div class="inventory-toolbar">
-            <p class="catalog-subtitle">{{ $canManage ? 'Alcance: todos los registros de inventario.' : 'Solo consulta: inventarios de bienes en ambientes de tipo LABORATORIO.' }}</p>
+            <p class="catalog-subtitle">{{ $canManage ? 'Alcance: todos los registros de inventario.' : 'Consulta y registro: inventarios de bienes en ambientes de tipo LABORATORIO.' }}</p>
             <div class="inventory-export-actions">
                 <button type="button" class="catalog-secondary-button" data-export-url="{{ url('/api/reportes/inventario/pdf') }}" data-export-filename="reporte-inventario.pdf">Descargar PDF</button>
                 <button type="button" class="catalog-secondary-button" data-export-url="{{ url('/api/reportes/inventario/excel') }}" data-export-filename="reporte-inventario.xlsx">Descargar Excel</button>
@@ -75,7 +76,7 @@
             <form method="dialog" class="catalog-detail-actions"><button class="catalog-secondary-button">Cerrar</button></form>
         </div>
     </dialog>
-    @if ($canManage)
+    @if ($canCreate)
         <dialog class="catalog-dialog stations-detail-dialog" data-create-inventory-dialog aria-labelledby="create-inventory-title">
             <form class="catalog-form" data-create-inventory-form>
                 <div class="catalog-dialog-heading"><div><p class="catalog-eyebrow">Toma de Inventario</p><h2 id="create-inventory-title">Registrar inventario</h2></div><button type="button" class="catalog-dialog-close" data-close-dialog aria-label="Cerrar">×</button></div>
@@ -84,16 +85,21 @@
                 <p class="catalog-subtitle">Selecciona un bien del listado paginado. La búsqueda solo consulta la página visible.</p>
                 <p class="catalog-message" data-picker-message role="status" aria-live="polite"></p><p class="catalog-search-summary" data-picker-summary aria-live="polite"></p>
                 <button type="button" class="catalog-retry-button" data-picker-retry hidden>Reintentar carga</button>
-                <div class="catalog-table-scroll"><table class="catalog-table"><thead><tr><th scope="col">Seleccionar</th><th scope="col">Bien ID</th><th scope="col">CBI</th><th scope="col">Descripción</th></tr></thead><tbody data-picker-rows></tbody></table></div>
+                <div class="catalog-table-scroll"><table class="catalog-table inventory-picker-table">
+                    <colgroup><col class="inventory-picker-select"><col class="inventory-picker-id"><col class="inventory-picker-cbi"><col></colgroup>
+                    <thead><tr><th scope="col">Seleccionar</th><th scope="col">Bien ID</th><th scope="col">CBI</th><th scope="col">Descripción</th></tr></thead><tbody data-picker-rows></tbody>
+                </table></div>
                 <div class="catalog-pagination" aria-label="Paginación de bienes"><span data-picker-page>Página —</span><div class="catalog-pagination-actions"><button type="button" data-picker-previous disabled>Anterior</button><button type="button" data-picker-next disabled>Siguiente</button></div></div>
                 <p class="stations-selection" data-selected-bien aria-live="polite">Ningún bien seleccionado.</p>
                 <div class="catalog-form-grid">
-                    <label>Año <span aria-hidden="true">*</span><input name="anio" type="number" step="1" min="-2147483648" max="2147483647" required></label>
-                    <label>Inventario <span aria-hidden="true">*</span><input name="inventario" type="text" maxlength="20" required></label>
+                    <label><span class="inventory-field-label">Año <span aria-hidden="true">*</span></span><input name="anio" type="number" step="1" min="-2147483648" max="2147483647" required></label>
+                    <label><span class="inventory-field-label">Inventario <span aria-hidden="true">*</span></span><input name="inventario" type="text" maxlength="20" required></label>
                 </div>
                 <div class="catalog-form-actions"><button type="button" class="catalog-secondary-button" data-close-dialog>Cancelar</button><button type="submit" class="catalog-primary-button" data-save-inventory disabled>Guardar inventario</button></div>
             </form>
         </dialog>
+    @endif
+    @if ($canManage)
         <dialog class="catalog-dialog" data-edit-inventory-dialog aria-labelledby="edit-inventory-title">
             <form class="catalog-form" data-edit-inventory-form>
                 <div class="catalog-dialog-heading"><div><p class="catalog-eyebrow">Toma de Inventario</p><h2 id="edit-inventory-title">Editar inventario</h2></div><button type="button" class="catalog-dialog-close" data-close-dialog aria-label="Cerrar">×</button></div>

@@ -42,6 +42,8 @@ Route::middleware(['auth:web', 'usuario.activo'])->group(function () {
 
     Route::middleware('rol:asistente')->group(function () {
         Route::get('/inventarios', [InventarioController::class, 'index']);
+        Route::get('/inventarios/bienes', [InventarioController::class, 'bienes']);
+        Route::post('/inventarios', [InventarioController::class, 'store']);
         Route::get('/inventarios/{bien_id}/{anio}', [InventarioController::class, 'show'])
             ->where(['bien_id' => '[0-9]{1,10}', 'anio' => '-?[0-9]{1,10}']);
         Route::get('/movimientos/opciones', [MovimientoController::class, 'opciones']);
@@ -99,7 +101,6 @@ Route::middleware(['auth:web', 'usuario.activo'])->group(function () {
         Route::apiResource('equipos-computo', EquipoComputoController::class)->parameter('equipos-computo', 'bien_id')->where(['bien_id' => '[0-9]{1,10}']);
         Route::apiResource('monitores', MonitorController::class)->parameter('monitores', 'bien_id')->where(['bien_id' => '[0-9]{1,10}']);
 
-        Route::post('/inventarios', [InventarioController::class, 'store']);
         Route::match(['put', 'patch'], '/inventarios/{bien_id}/{anio}', [InventarioController::class, 'update'])
             ->where(['bien_id' => '[0-9]{1,10}', 'anio' => '-?[0-9]{1,10}']);
         Route::delete('/inventarios/{bien_id}/{anio}', [InventarioController::class, 'destroy'])
