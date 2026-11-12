@@ -88,6 +88,19 @@ class AlcanceDatosService
         return $query->whereRaw('1 = 0');
     }
 
+    public function bienesConsulta(Usuario $usuario): Builder
+    {
+        if ($this->tieneAccesoCompleto($usuario)) {
+            return Bien::query();
+        }
+
+        if ($this->rol($usuario) === 'coordinador') {
+            return Bien::whereIn('id', $this->equipos($usuario)->select('equipos.bien_id'));
+        }
+
+        return $this->bienesInventario($usuario);
+    }
+
     public function tieneAccesoCompleto(Usuario $usuario): bool
     {
         return in_array($this->rol($usuario), self::ROLES_ACCESO_COMPLETO, true);

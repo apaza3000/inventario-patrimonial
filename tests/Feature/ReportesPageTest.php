@@ -37,7 +37,12 @@ class ReportesPageTest extends TestCase
                 }
             }
             $this->assertSame(6, substr_count($response->getContent(), 'data-report-url='));
-            $response->assertDontSee('<select', false)->assertDontSee('<form', false);
+            $doc = new \DOMDocument();
+            @$doc->loadHTML($response->getContent());
+            $xpath = new \DOMXPath($doc);
+            // Report cards still have no filters/forms; the shared header has its own search form.
+            $this->assertSame(0, $xpath->query('//*[@data-reports-root]//select | //*[@data-reports-root]//form')->length);
+            $response->assertSee('data-global-search-form', false);
         }
     }
 

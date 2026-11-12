@@ -1,5 +1,6 @@
 import './bootstrap';
 import './user-menu';
+import './global-search';
 import './login';
 import './catalogo-bienes';
 import './estaciones';

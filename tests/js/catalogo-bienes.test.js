@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
-const source = readFileSync(new URL('../../resources/js/catalogo-bienes.js', import.meta.url), 'utf8');
+const detailSource = readFileSync(new URL('../../resources/js/bien-detail.js', import.meta.url), 'utf8').replace('export function', 'function');
+const source = detailSource + readFileSync(new URL('../../resources/js/catalogo-bienes.js', import.meta.url), 'utf8').replace(/^import .*;\r?\n/, '');
 const flush = async () => { for (let i = 0; i < 10; i++) await new Promise(setImmediate); };
 class Element {
     constructor(tag = '') {

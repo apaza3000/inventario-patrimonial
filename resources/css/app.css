@@ -153,6 +153,26 @@ body {
     opacity: 0.78;
 }
 
+.global-search { position: relative; width: min(100%, 650px); min-width: 0; }
+.global-search .search-container { width: 100%; box-sizing: border-box; }
+.global-search-submit { display: grid; place-items: center; flex: none; padding: 8px; border: 0; border-radius: 50%; background: transparent; color: var(--oscuro); cursor: pointer; }
+.global-search-submit:hover { background: rgba(255, 255, 255, .5); }
+.global-search-results { position: absolute; top: calc(100% + 9px); left: 0; z-index: 40; width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #e8dfd1; border-radius: 15px; background: #fff9ef; box-shadow: 0 12px 30px rgba(59, 54, 43, .16); }
+.global-search [hidden] { display: none !important; }
+.global-search-status { margin: 0; padding: 4px 5px 9px; color: #585d4d; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.global-search-list { max-height: min(45vh, 360px); overflow-y: auto; margin: 0; padding: 0; list-style: none; overscroll-behavior: contain; }
+.global-search-result { display: flex; flex-direction: column; gap: 5px; width: 100%; padding: 12px 10px; border: 0; border-radius: 9px; background: transparent; color: var(--oscuro); font: inherit; font-size: 14px; line-height: 1.45; text-align: left; white-space: normal; overflow-wrap: anywhere; cursor: pointer; transition: background-color 150ms ease; }
+.global-search-result span { color: #68695e; font-size: 12px; }
+.global-search-result:hover { background: #f5e8c9; }
+.global-search-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; font-size: 12px; }
+.global-search-pagination button { padding: 7px 9px; border: 1px solid #ddd3c1; border-radius: 8px; background: var(--beige); color: var(--oscuro); font: inherit; cursor: pointer; }
+.global-search-pagination button:disabled { opacity: .5; cursor: default; }
+.global-search button:focus-visible { outline: 3px solid var(--verde); outline-offset: -3px; }
+@media (max-width: 500px) {
+    .global-search { width: 100%; flex-basis: 100%; }
+    .global-search .search-input { font-size: 16px; }
+}
+
 .user-info {
     display: flex;
     align-items: center;
@@ -259,12 +279,6 @@ body {
 
 .user-menu-status:empty {
     display: none;
-}
-
-.notification-icon {
-    width: 19px;
-    height: 19px;
-    flex: none;
 }
 
 .content {

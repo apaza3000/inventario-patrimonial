@@ -40,6 +40,11 @@ Route::middleware(['auth:web', 'usuario.activo'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
 
+    Route::middleware('rol:asistente,coordinador')->group(function () {
+        Route::get('/busqueda/bienes', [BienController::class, 'buscar']);
+        Route::get('/busqueda/bienes/{id}', [BienController::class, 'detalleBusqueda'])->where('id', '[0-9]{1,10}');
+    });
+
     Route::middleware('rol:asistente')->group(function () {
         Route::get('/inventarios', [InventarioController::class, 'index']);
         Route::get('/inventarios/bienes', [InventarioController::class, 'bienes']);

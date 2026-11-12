@@ -7,6 +7,7 @@ use App\Models\Marca;
 use App\Models\TipoEquipo;
 use App\Models\TipoMueble;
 use App\Services\RegistroBienService;
+use App\Services\AlcanceDatosService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -61,6 +62,30 @@ class BienController extends Controller
         }
 
         return response()->json(['data' => $bien]);
+    }
+
+    public function buscar(Request $request, AlcanceDatosService $alcance): JsonResponse
+    {
+        $data = $request->validate(['q' => ['required', 'string', 'min:2', 'max:150'], 'page' => ['sometimes', 'integer', 'min:1']]);
+        // Literal substring matching: %, _ and the escape character are not wildcards.
+        $term = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], trim($data['q'])).'%';
+        $query = $alcance->bienesConsulta($request->user('web'));
+        $query->where(function ($query) use ($term) {
+            $query->whereRaw("cbi LIKE ? ESCAPE '!'", [$term])
+                ->orWhereRaw("descripcion LIKE ? ESCAPE '!'", [$term])
+                ->orWhereHas('equipo', fn ($equipment) => $equipment->whereRaw("serie LIKE ? ESCAPE '!'", [$term]));
+        });
+
+        return response()->json($query->with(['ambiente.sede', 'equipo' => fn ($q) => $q->select('bien_id', 'serie')])
+            ->orderBy('id')->paginate(15));
+    }
+
+    public function detalleBusqueda(Request $request, int $id, AlcanceDatosService $alcance): JsonResponse
+    {
+        $bien = $alcance->bienesConsulta($request->user('web'))
+            ->with([...self::RELATIONS, 'ambiente.sede', ...self::TECHNICAL_RELATIONS])->find($id);
+
+        return $bien === null ? $this->notFound() : response()->json(['data' => $bien]);
     }
 
     public function opciones(): JsonResponse

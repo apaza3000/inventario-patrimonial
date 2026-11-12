@@ -80,7 +80,8 @@ class MantenimientosPageTest extends TestCase
             $response = $this->actingAs($this->user($role), 'web')->get('/mantenimientos/registrar')->assertOk()
                 ->assertSee('data-maintenance-form-page', false)->assertSee('data-bien-search-button', false)
                 ->assertSee('data-bien-technical-fields', false)->assertSee('Mantener la condición actual')
-                ->assertSee('Sin asignar')->assertDontSee('<dialog', false)->assertDontSee('data-bien-next', false)
+                ->assertSee('Sin asignar')->assertDontSee('data-maintenance-form-dialog', false)->assertDontSee('data-bien-next', false)
+                ->assertSee('data-global-detail-root', false)
                 ->assertSee('href="'.route('mantenimientos.index').'" class="maintenance-breadcrumb-link">Mantenimiento</a>', false)
                 ->assertSee('href="'.route('mantenimientos.index').'" class="catalog-secondary-button" data-cancel-registration>Cancelar</a>', false)
                 ->assertSee('href="'.route('mantenimientos.index').'" class="menu-item active"', false);

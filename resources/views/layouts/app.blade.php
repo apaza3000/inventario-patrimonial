@@ -76,28 +76,37 @@
 
         <header class="topbar">
 
-            <div class="search-container">
+            <div class="global-search" data-global-search data-search-url="{{ url('/api/busqueda/bienes') }}" data-login-url="{{ route('login') }}">
+                <form class="search-container" data-global-search-form role="search" aria-label="Búsqueda global de bienes">
 
                 <input
-                    type="text"
                     class="search-input"
-                    placeholder="Buscar por código/serie"
-                    aria-label="Buscar por código o serie"
-                    @if (request()->routeIs('inventario.*', 'movimientos.*', 'mantenimientos.*', 'reportes.*', 'configuracion.*')) disabled title="Búsqueda disponible próximamente" @endif
+                    type="search"
+                    data-global-search-input
+                    maxlength="150"
+                    autocomplete="off"
+                    placeholder="Buscar por CBI, serie o descripción"
+                    aria-label="Buscar bienes por CBI, serie o descripción"
+                    aria-controls="global-search-results"
+                    aria-expanded="false"
+                    aria-describedby="global-search-status"
+                    @unless (in_array(auth('web')->user()?->rol?->nombre, ['superadmin', 'director', 'administrador', 'coordinador', 'asistente'], true)) disabled @endunless
                 >
 
-                <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <button class="global-search-submit" type="submit" aria-label="Buscar bienes"><svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" stroke-width="2"></circle>
                     <path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                </svg>
+                </svg></button>
+                </form>
+                <section id="global-search-results" class="global-search-results" data-global-search-panel hidden aria-label="Resultados de búsqueda">
+                    <p id="global-search-status" class="global-search-status" data-global-search-status role="status" aria-live="polite"></p>
+                    <ul class="global-search-list" data-global-search-list></ul>
+                    <div class="global-search-pagination" data-global-search-pagination hidden><button type="button" data-global-search-previous>Anterior</button><span data-global-search-page></span><button type="button" data-global-search-next>Siguiente</button></div>
+                </section>
 
             </div>
 
             <div class="user-info">
-                <svg class="notification-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z" fill="currentColor"></path>
-                    <path d="M10 20a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-                </svg>
                 @php
                     $usuario = auth('web')->user();
                     $nombreUsuario = trim(($usuario?->nombres ?? '') . ' ' . ($usuario?->apellidos ?? ''));
@@ -126,5 +135,8 @@
 
 </div>
 
+<div data-global-detail-root>
+    @include('components.bien-detail', ['detailPrefix' => 'global-bien-detail', 'detailContext' => 'Consulta de bienes'])
+</div>
 </body>
 </html>
