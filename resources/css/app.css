@@ -156,14 +156,14 @@ body {
 .global-search { position: relative; width: min(100%, 650px); min-width: 0; }
 .global-search .search-container { width: 100%; box-sizing: border-box; }
 .global-search-submit { display: grid; place-items: center; flex: none; padding: 8px; border: 0; border-radius: 50%; background: transparent; color: var(--oscuro); cursor: pointer; }
-.global-search-submit:hover { background: rgba(255, 255, 255, .5); }
+.global-search-submit:hover:not(:disabled):not([aria-disabled="true"]) { background: rgba(255, 255, 255, .5); }
 .global-search-results { position: absolute; top: calc(100% + 9px); left: 0; z-index: 40; width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #e8dfd1; border-radius: 15px; background: #fff9ef; box-shadow: 0 12px 30px rgba(59, 54, 43, .16); }
 .global-search [hidden] { display: none !important; }
 .global-search-status { margin: 0; padding: 4px 5px 9px; color: #585d4d; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
 .global-search-list { max-height: min(45vh, 360px); overflow-y: auto; margin: 0; padding: 0; list-style: none; overscroll-behavior: contain; }
 .global-search-result { display: flex; flex-direction: column; gap: 5px; width: 100%; padding: 12px 10px; border: 0; border-radius: 9px; background: transparent; color: var(--oscuro); font: inherit; font-size: 14px; line-height: 1.45; text-align: left; white-space: normal; overflow-wrap: anywhere; cursor: pointer; transition: background-color 150ms ease; }
 .global-search-result span { color: #68695e; font-size: 12px; }
-.global-search-result:hover { background: #f5e8c9; }
+.global-search-result:hover:not(:disabled):not([aria-disabled="true"]) { background: #f5e8c9; }
 .global-search-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; font-size: 12px; }
 .global-search-pagination button { padding: 7px 9px; border: 1px solid #ddd3c1; border-radius: 8px; background: var(--beige); color: var(--oscuro); font: inherit; cursor: pointer; }
 .global-search-pagination button:disabled { opacity: .5; cursor: default; }
@@ -220,7 +220,7 @@ body {
     white-space: nowrap;
 }
 
-.user-menu-toggle:hover,
+.user-menu-toggle:hover:not(:disabled):not([aria-disabled="true"]),
 .user-menu-toggle[aria-expanded="true"] {
     background: rgba(255, 255, 255, 0.5);
     border-color: rgba(84, 95, 60, 0.16);
@@ -403,7 +403,7 @@ body {
     cursor: pointer;
 }
 
-.quick-actions a:hover {
+.quick-actions a:hover:not([aria-disabled="true"]) {
     background: #d95e2a;
 }
 
@@ -699,7 +699,7 @@ body.login-page {
     cursor: pointer;
 }
 
-.login-password-toggle:hover {
+.login-password-toggle:hover:not(:disabled):not([aria-disabled="true"]) {
     background: rgba(63, 58, 50, 0.1);
 }
 
@@ -735,7 +735,7 @@ body.login-page {
     cursor: pointer;
 }
 
-.login-submit:hover {
+.login-submit:hover:not(:disabled):not([aria-disabled="true"]) {
     background: #d95e2a;
 }
 
@@ -1740,5 +1740,151 @@ body.login-page {
     .catalog-pagination {
         align-items: flex-start;
         flex-direction: column;
+    }
+}
+
+/* Shared interaction feedback. Motion never changes layout or delays native dialogs. */
+:root {
+    --ui-feedback-duration: 160ms;
+    --ui-feedback-ease: cubic-bezier(.2, .7, .2, 1);
+}
+
+:where(.app-body, .login-page) :where(button, a[href]):not(:disabled):not([aria-disabled="true"]) {
+    transition-property: background-color, border-color, color, box-shadow, transform, opacity;
+    transition-duration: var(--ui-feedback-duration);
+    transition-timing-function: var(--ui-feedback-ease);
+}
+
+:where(.app-body, .login-page) :where(button:not(:disabled):not([aria-disabled="true"]), a[href]:not([aria-disabled="true"])):focus-visible {
+    outline: 3px solid var(--verde);
+    outline-offset: 3px;
+}
+
+.sidebar .menu-item[href]:not([aria-disabled="true"]):focus-visible {
+    outline-color: var(--blanco);
+}
+
+.menu-item.active[href]:hover:not([aria-disabled="true"]) {
+    background: var(--amarillo);
+}
+
+:where(.app-body, .login-page) :is(.catalog-primary-button, .catalog-secondary-button, .login-submit, .config-module-button):not(:disabled):not([aria-disabled="true"]):active,
+.quick-actions a[href]:not([aria-disabled="true"]):active {
+    transform: translateY(1px);
+}
+
+:where(.catalog-form-grid, .catalog-filter-grid, .config-search) :is(input, select, textarea):not(:disabled),
+.login-input-wrap {
+    transition: border-color var(--ui-feedback-duration) var(--ui-feedback-ease),
+        box-shadow var(--ui-feedback-duration) var(--ui-feedback-ease),
+        background-color var(--ui-feedback-duration) var(--ui-feedback-ease);
+}
+
+:where(.catalog-form-grid, .catalog-filter-grid, .config-search) :is(input, select, textarea):not(:disabled):not([type="checkbox"]):not([type="radio"]):focus {
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(140, 155, 108, .14);
+}
+
+.login-input-wrap:focus-within {
+    box-shadow: 0 0 0 3px rgba(140, 155, 108, .14);
+}
+
+/* Native validation appears only after interaction, never on untouched required fields. */
+:where(.catalog-form-grid, .catalog-filter-grid, .config-search) :is(input, select, textarea):not(:disabled)[aria-invalid="true"] {
+    border-color: #a4341d;
+}
+
+@supports selector(input:user-invalid) {
+    :where(.catalog-form-grid, .catalog-filter-grid, .config-search) :is(input, select, textarea):not(:disabled):user-invalid {
+        border-color: #a4341d;
+    }
+}
+
+.reports-card,
+.dashboard-panel {
+    transition: box-shadow var(--ui-feedback-duration) var(--ui-feedback-ease);
+}
+
+.reports-card:focus-within,
+.dashboard-panel:focus-within {
+    box-shadow: 0 8px 22px rgba(51, 48, 40, .1);
+}
+
+/* Hover movement is limited to devices with a precise pointer, avoiding sticky touch states. */
+@media (hover: hover) and (pointer: fine) {
+    .catalog-tab[href]:not(.active):not([aria-disabled="true"]):hover {
+        background: var(--beige);
+    }
+
+    :is(.catalog-pagination, .config-picker-controls, .global-search-pagination, .catalog-category-tabs) button:not(:disabled):not([aria-disabled="true"]):hover,
+    :is(.catalog-dialog-close, .catalog-retry-button):not(:disabled):not([aria-disabled="true"]):hover {
+        box-shadow: inset 0 0 0 1px var(--verde);
+    }
+
+    :where(.app-body, .login-page) :is(.catalog-primary-button, .catalog-secondary-button, .login-submit, .config-module-button):not(:disabled):not([aria-disabled="true"]):hover,
+    .quick-actions a[href]:not([aria-disabled="true"]):hover {
+        transform: translateY(-1px);
+        box-shadow: 0 5px 14px rgba(59, 54, 43, .13);
+    }
+
+    :where(.app-body, .login-page) :is(.catalog-primary-button, .catalog-secondary-button, .login-submit, .config-module-button):not(:disabled):not([aria-disabled="true"]):hover:active,
+    .quick-actions a[href]:not([aria-disabled="true"]):hover:active {
+        transform: translateY(1px);
+    }
+
+    .sidebar .menu-item[href]:not([aria-disabled="true"]):not(.active):hover {
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18);
+    }
+
+    .reports-card:has(button:not(:disabled)):hover {
+        box-shadow: 0 8px 22px rgba(51, 48, 40, .1);
+    }
+}
+
+.catalog-dialog[open] {
+    animation: ui-dialog-enter 180ms var(--ui-feedback-ease) both;
+}
+
+.catalog-dialog[open]::backdrop {
+    animation: ui-feedback-enter 150ms ease-out both;
+}
+
+.user-menu-panel:not([hidden]),
+.global-search-results:not([hidden]),
+:where(.catalog-message, .catalog-form-message, .login-status, .user-menu-status):not(:empty):not([hidden]) {
+    animation: ui-feedback-enter 140ms ease-out both;
+}
+
+@keyframes ui-dialog-enter {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ui-feedback-enter {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Disabled actions stay still, including when a request disables a hovered button. */
+:where(.app-body, .login-page) :is(button, input, select, textarea, a)[aria-disabled="true"],
+:where(.app-body, .login-page) :is(button, input, select, textarea):disabled {
+    transition: none;
+    animation: none;
+    transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :is(.app-body, .login-page),
+    :is(.app-body, .login-page) *,
+    :is(.app-body, .login-page) *::before,
+    :is(.app-body, .login-page) *::after,
+    .catalog-dialog::backdrop {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+
+    :where(.app-body, .login-page) :is(button, a[href]):not(:disabled):not([aria-disabled="true"]):is(:hover, :active) {
+        transform: none !important;
     }
 }
