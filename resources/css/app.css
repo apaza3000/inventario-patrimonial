@@ -1691,9 +1691,16 @@ body.login-page {
 
 .catalog-form-actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 10px;
     margin-top: 26px;
+}
+
+.catalog-form-actions > :is(button, a) {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 @media (max-width: 1100px) {
