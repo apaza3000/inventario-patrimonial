@@ -76,13 +76,19 @@ Route::middleware(['auth:web', 'usuario.activo'])->group(function () {
 
         Route::get('/reportes/equipos/pdf', [ReporteController::class, 'equiposPdf']);
         Route::get('/reportes/equipos/excel', [ReporteController::class, 'equiposExcel']);
+        Route::get('/reportes/equipos/opciones', [ReporteController::class, 'opciones'])->defaults('tipo', 'equipos');
+        Route::get('/reportes/equipos/resumen', [ReporteController::class, 'resumen'])->defaults('tipo', 'equipos');
         Route::get('/reportes/mantenimientos/pdf', [ReporteController::class, 'mantenimientosPdf']);
         Route::get('/reportes/mantenimientos/excel', [ReporteController::class, 'mantenimientosExcel']);
+        Route::get('/reportes/mantenimientos/opciones', [ReporteController::class, 'opciones'])->defaults('tipo', 'mantenimientos');
+        Route::get('/reportes/mantenimientos/resumen', [ReporteController::class, 'resumen'])->defaults('tipo', 'mantenimientos');
     });
 
     Route::middleware('rol:asistente,coordinador')->group(function () {
         Route::get('/reportes/inventario/pdf', [ReporteController::class, 'inventarioPdf']);
         Route::get('/reportes/inventario/excel', [ReporteController::class, 'inventarioExcel']);
+        Route::get('/reportes/inventario/opciones', [ReporteController::class, 'opciones'])->defaults('tipo', 'inventario');
+        Route::get('/reportes/inventario/resumen', [ReporteController::class, 'resumen'])->defaults('tipo', 'inventario');
     });
 
     Route::middleware('rol:superadmin')->group(function () {

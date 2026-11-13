@@ -862,6 +862,16 @@ body.login-page {
     overflow-wrap: anywhere;
 }
 
+[data-reports-root] .reports-grid { grid-template-columns: 1fr; }
+[data-reports-root] .reports-filter-panel { margin-bottom: 18px; }
+[data-reports-root] .reports-filter-panel summary { padding: 12px 0; color: #59694b; cursor: pointer; font-weight: 600; }
+[data-reports-root] .reports-filter-fields { min-width: 0; margin: 8px 0 18px; padding: 0; border: 0; }
+[data-reports-root] .reports-complete { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 16px; line-height: 1.5; }
+[data-reports-root] .reports-complete input { flex: none; width: 18px; height: 18px; margin-top: 3px; accent-color: var(--verde); }
+[data-reports-root] button:disabled { cursor: not-allowed; }
+[data-reports-root] .inventory-export-actions { flex-wrap: wrap; }
+[data-reports-root] summary:focus-visible { outline: 2px solid var(--verde); outline-offset: 2px; border-radius: 6px; }
+
 .catalog-page {
     max-width: 1240px;
     margin: 0 auto;

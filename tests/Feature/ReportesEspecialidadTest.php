@@ -209,6 +209,8 @@ class ReportesEspecialidadTest extends TestCase
 
     private function assertFullReportsFor(string $rol): void
     {
+        [$propio, $ajeno] = $this->crearEquiposEnEspecialidadesDistintas();
+        $this->crearMantenimientos($propio, $ajeno);
         $this->como($this->crearUsuario($rol));
         $this->get('/api/reportes/inventario/excel')->assertOk();
         $this->get('/api/reportes/equipos/pdf')->assertOk();

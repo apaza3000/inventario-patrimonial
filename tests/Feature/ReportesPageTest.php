@@ -40,8 +40,10 @@ class ReportesPageTest extends TestCase
             $doc = new \DOMDocument();
             @$doc->loadHTML($response->getContent());
             $xpath = new \DOMXPath($doc);
-            // Report cards still have no filters/forms; the shared header has its own search form.
-            $this->assertSame(0, $xpath->query('//*[@data-reports-root]//select | //*[@data-reports-root]//form')->length);
+            $this->assertSame(3, $xpath->query('//*[@data-reports-root]//form[@data-report-form]')->length);
+            $this->assertSame(6, $xpath->query('//*[@data-reports-root]//button[@data-report-url and @disabled]')->length);
+            $this->assertSame(3, $xpath->query('//*[@data-reports-root]//*[@data-report-complete]')->length);
+            $response->assertSee('data-report-total', false)->assertSee('Limpiar filtros');
             $response->assertSee('data-global-search-form', false);
         }
     }

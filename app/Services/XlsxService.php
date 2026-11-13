@@ -52,12 +52,14 @@ class XlsxService
         $ultimaFila = max(1, count($todasLasFilas));
         $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
         $xml .= '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+        $xml .= '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>';
         $xml .= '<dimension ref="A1:'.$ultimaColumna.$ultimaFila.'"/>';
         $xml .= '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>';
         $xml .= '<cols>';
 
         for ($indice = 1; $indice <= count($encabezados); $indice++) {
-            $xml .= '<col min="'.$indice.'" max="'.$indice.'" width="20" customWidth="1"/>';
+            $ancho = in_array($encabezados[$indice - 1], ['Descripción', 'Equipo', 'Descripción del mantenimiento', 'Diagnóstico', 'Trabajo realizado', 'Observaciones'], true) ? 42 : 22;
+            $xml .= '<col min="'.$indice.'" max="'.$indice.'" width="'.$ancho.'" customWidth="1"/>';
         }
 
         $xml .= '</cols><sheetData>';
@@ -76,7 +78,9 @@ class XlsxService
             $xml .= '</row>';
         }
 
-        return $xml.'</sheetData></worksheet>';
+        return $xml.'</sheetData><autoFilter ref="A1:'.$ultimaColumna.$ultimaFila.'"/>'
+            .'<pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>'
+            .'<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>';
     }
 
     private function columna(int $numero): string
@@ -124,6 +128,7 @@ class XlsxService
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             .'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
             .'<sheets><sheet name="'.$this->escape(substr($nombreHoja, 0, 31)).'" sheetId="1" r:id="rId1"/></sheets>'
+            .'<definedNames><definedName name="_xlnm.Print_Titles" localSheetId="0">'.$this->escape("'".str_replace("'", "''", substr($nombreHoja, 0, 31))."'!\$1:\$1").'</definedName></definedNames>'
             .'</workbook>';
     }
 
@@ -141,10 +146,10 @@ class XlsxService
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             .'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
             .'<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>'
-            .'<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9EAF7"/><bgColor indexed="64"/></patternFill></fill></fills>'
+            .'<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE7EEDF"/><bgColor indexed="64"/></patternFill></fill></fills>'
             .'<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
             .'<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-            .'<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="1" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs>'
+            .'<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf><xf numFmtId="0" fontId="1" fillId="1" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf></cellXfs>'
             .'</styleSheet>';
     }
 }
