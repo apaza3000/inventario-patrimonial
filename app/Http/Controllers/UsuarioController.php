@@ -157,7 +157,7 @@ class UsuarioController extends Controller
         $rolId = $data['rol_id'] ?? $usuario?->rol_id;
         $rol = Rol::query()->find($rolId);
 
-        if ($rol?->nombre === 'coordinador') {
+        if (in_array($rol?->nombre, ['asistente', 'coordinador'], true)) {
             $especialidadId = array_key_exists('especialidad_id', $data)
                 ? $data['especialidad_id']
                 : $usuario?->especialidad_id;
@@ -166,12 +166,12 @@ class UsuarioController extends Controller
                 return response()->json([
                     'message' => 'Los datos enviados no son válidos.',
                     'errors' => [
-                        'especialidad_id' => ['La especialidad es obligatoria para los usuarios coordinadores.'],
+                        'especialidad_id' => ['La especialidad es obligatoria para los usuarios con rol '.$rol->nombre.'.'],
                     ],
                 ], 422);
             }
 
-            if (! in_array($especialidadId, self::ESPECIALIDADES_ACADEMICAS, true)) {
+            if (! in_array((int) $especialidadId, self::ESPECIALIDADES_ACADEMICAS, true)) {
                 return response()->json([
                     'message' => 'Los datos enviados no son válidos.',
                     'errors' => [
@@ -179,6 +179,9 @@ class UsuarioController extends Controller
                     ],
                 ], 422);
             }
+
+            // Preserve the saved assignment on partial updates and normalize valid form IDs.
+            $data['especialidad_id'] = (int) $especialidadId;
         } else {
             $data['especialidad_id'] = null;
         }

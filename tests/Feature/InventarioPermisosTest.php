@@ -49,6 +49,7 @@ class InventarioPermisosTest extends TestCase
             $table->integer('bien_id'); $table->integer('anio'); $table->string('inventario', 20);
             $table->primary(['bien_id', 'anio']); $table->foreign('bien_id')->references('id')->on('bienes');
         });
+        DB::table('especialidades')->insert(['id' => 1, 'nombre' => 'Carrera simulada']);
         foreach (['superadmin', 'director', 'administrador', 'asistente', 'coordinador'] as $i => $role) {
             DB::table('roles')->insert(['id' => $i + 1, 'nombre' => $role]);
             DB::table('usuarios')->insert([
@@ -135,7 +136,7 @@ class InventarioPermisosTest extends TestCase
             $this->deleteJson('/api/inventarios/20/2026')->assertOk();
             $this->postJson('/api/usuarios', [
                 'nombres' => 'Nuevo', 'apellidos' => 'Simulado', 'correo' => "nuevo-$role@example.test",
-                'password' => 'ClaveTemporal123!', 'rol_id' => 4, 'activo' => true,
+                'password' => 'ClaveTemporal123!', 'rol_id' => 4, 'especialidad_id' => 1, 'activo' => true,
             ])->assertCreated();
             $this->assertDatabaseHas('bienes', ['id' => 20, 'ambiente_id' => 2]);
         }

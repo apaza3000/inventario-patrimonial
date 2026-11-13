@@ -49,15 +49,31 @@ test('password indicator is required for registration and optional in editing', 
     }
 });
 
-test('specialty indicator follows the existing coordinator validation without affecting other roles', () => {
+test('specialty is required for assistants and coordinators without affecting other roles', () => {
     const { buildField, syncSpecialty, controls } = setup();
     const { input: role } = buildField({ key: 'rol_id', label: 'Rol', type: 'select', required: true }, null, 'usuarios');
     buildField({ key: 'especialidad_id', label: 'Especialidad', type: 'select' }, null, 'usuarios');
-    for (const name of ['coordinador', 'director', 'coordinador', 'superadmin']) {
+    for (const name of ['coordinador', 'asistente', 'director', 'asistente', 'administrador', 'coordinador', 'superadmin']) {
         role.selectedOptions = [{ textContent: name }];
         syncSpecialty();
         const specialty = controls.get('especialidad_id');
-        assert.equal(specialty.input.required, name === 'coordinador');
-        assert.equal(specialty.requiredMarker.hidden, name !== 'coordinador');
+        const required = ['asistente', 'coordinador'].includes(name);
+        assert.equal(specialty.input.required, required);
+        assert.equal(specialty.requiredMarker.hidden, !required);
+        assert.equal(specialty.locked, !required);
     }
+});
+
+test('switching between academic roles keeps the chosen specialty; other roles clear it', () => {
+    const { buildField, syncSpecialty, controls } = setup();
+    const { input: role } = buildField({ key: 'rol_id', label: 'Rol', type: 'select', required: true }, null, 'usuarios');
+    const { input: specialty } = buildField({ key: 'especialidad_id', label: 'Especialidad', type: 'select' }, { especialidad_id: 2 }, 'usuarios');
+    for (const name of ['asistente', 'coordinador (selección actual)', 'asistente']) {
+        role.selectedOptions = [{ textContent: name }]; syncSpecialty();
+        assert.equal(specialty.value, 2);
+        assert.equal(specialty.required, true);
+    }
+    role.selectedOptions = [{ textContent: 'director' }]; syncSpecialty();
+    assert.equal(specialty.value, '');
+    assert.equal(controls.get('especialidad_id').locked, true);
 });

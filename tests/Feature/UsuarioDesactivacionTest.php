@@ -113,6 +113,7 @@ class UsuarioDesactivacionTest extends TestCase
             'correo' => uniqid('desactivacion-', true).'@example.test',
             'password_hash' => Hash::make('ClaveSegura123!'),
             'rol_id' => Rol::where('nombre', $rol)->firstOrFail()->id,
+            'especialidad_id' => in_array($rol, ['asistente', 'coordinador'], true) ? 1 : null,
             'activo' => $activo,
             'fecha_registro' => now(),
         ]);

@@ -49,6 +49,7 @@ class UltimoSuperadminTest extends TestCase
             ['id' => 1, 'nombre' => 'superadmin'], ['id' => 2, 'nombre' => 'administrador'],
             ['id' => 3, 'nombre' => 'director'], ['id' => 4, 'nombre' => 'asistente'],
         ]);
+        DB::table('especialidades')->insert(['id' => 1, 'nombre' => 'Carrera simulada']);
         $this->user(1, 1);
         $actor = $this->user(9, 2);
         $this->actingAs($actor, 'web')->withHeader('Origin', 'http://localhost:3000');
@@ -107,7 +108,7 @@ class UltimoSuperadminTest extends TestCase
             ->assertJsonPath('message', 'No puede desactivar su propia cuenta.');
         $this->patchJson('/api/usuarios/1', ['rol_id' => '1', 'nombres' => 'Actualizado'])->assertOk();
         $this->user(2, 1);
-        $this->patchJson('/api/usuarios/1', ['rol_id' => 4, 'activo' => false])->assertOk();
+        $this->patchJson('/api/usuarios/1', ['rol_id' => 4, 'especialidad_id' => 1, 'activo' => false])->assertOk();
         $this->assertDatabaseHas('usuarios', ['id' => 2, 'rol_id' => 1, 'activo' => true]);
         $this->patchJson('/api/usuarios/1', ['rol_id' => 3, 'activo' => true])->assertOk();
     }

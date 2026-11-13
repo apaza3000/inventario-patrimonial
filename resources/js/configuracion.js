@@ -211,12 +211,12 @@ if (config) {
         if (editKey !== 'usuarios' || !controls.has('especialidad_id')) return;
         const role = controls.get('rol_id').input;
         // Reserved role names determine permissions in the existing backend.
-        const isCoordinator = role.selectedOptions[0]?.textContent.replace(' (selección actual)', '') === 'coordinador';
+        const requiresSpecialty = ['asistente', 'coordinador'].includes(role.selectedOptions[0]?.textContent.replace(' (selección actual)', ''));
         const specialty = controls.get('especialidad_id').input;
-        specialty.required = isCoordinator;
-        controls.get('especialidad_id').requiredMarker.hidden = !isCoordinator;
-        controls.get('especialidad_id').locked = !isCoordinator;
-        if (!isCoordinator) specialty.value = '';
+        specialty.required = requiresSpecialty;
+        controls.get('especialidad_id').requiredMarker.hidden = !requiresSpecialty;
+        controls.get('especialidad_id').locked = !requiresSpecialty;
+        if (!requiresSpecialty) specialty.value = '';
         editorState();
     };
     const openEditor = async (key, id = null) => {
