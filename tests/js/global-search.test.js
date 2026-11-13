@@ -13,6 +13,7 @@ class Element {
     append(...children) { this.children.push(...children); }
     replaceChildren() { this.children = []; }
     setAttribute(name, value) { this.attributes[name] = value; }
+    getAttribute(name) { return this.attributes[name] ?? null; }
     removeAttribute(name) { delete this.attributes[name]; }
     contains(target) { return target === this; }
     focus() { this.focused = true; }
@@ -62,6 +63,40 @@ test('two characters and debounce are required; Enter searches immediately with 
     assert.equal(app.calls.length, 1);
     assert.match(app.find('list').children[0].children[0].children[0].textContent, /0243831/);
     assert.equal(app.detailFind('[data-bien-detail-dialog]').open, undefined);
+});
+
+test('station asset buttons reuse the scoped read-only detail and restore focus to their origin', async () => {
+    const app = setup();
+    const trigger = new Element(); trigger.dataset.viewBienDetail = '20'; trigger.isConnected = true;
+    trigger.closest = () => trigger;
+    await app.document.emit('click', { target: trigger });
+    assert.equal(app.calls.length, 1);
+    assert.equal(app.calls[0].url, '/api/busqueda/bienes/20');
+    assert.equal(app.detailFind('[data-bien-detail-dialog]').open, true);
+    assert.equal(app.detailFind('[data-detail-cbi]').textContent, '0243831');
+    const technical = app.detailFind('[data-technical-fields]').children;
+    assert.equal(technical.find((group) => group.children[0].textContent === 'Memoria RAM').children[1].textContent, '16 GB');
+    await app.detailFind('[data-close-bien-detail]').emit('click');
+    assert.equal(trigger.focused, true);
+    assert.equal(app.find('input').focused, undefined);
+});
+
+test('station detail errors respect API permissions and never display stale asset fields', async () => {
+    for (const status of [403, 404]) {
+        const app = setup({ fail: status });
+        const trigger = new Element(); trigger.dataset.viewBienDetail = '20'; trigger.closest = () => trigger;
+        await app.document.emit('click', { target: trigger });
+        assert.equal(app.detailFind('[data-bien-detail-fields]').hidden, true);
+        assert.match(app.detailFind('[data-bien-detail-message]').textContent, status === 403 ? /permiso/ : /fuera de tu alcance/);
+    }
+    const app = setup();
+    for (const id of ['undefined', '0', '../20']) {
+        const trigger = new Element(); trigger.dataset.viewBienDetail = id; trigger.closest = () => trigger;
+        await app.document.emit('click', { target: trigger });
+    }
+    const trigger = new Element(); trigger.dataset.viewBienDetail = '20'; trigger.disabled = true; trigger.closest = () => trigger;
+    await app.document.emit('click', { target: trigger });
+    assert.equal(app.calls.length, 0);
 });
 
 test('results paginate on the server and a new search resets to the first page', async () => {

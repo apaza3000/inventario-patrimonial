@@ -39,6 +39,10 @@ class EstacionesPageTest extends TestCase
                 ->assertSee('data-stations-root', false)
                 ->assertSee('La búsqueda se limita a la página visible')
                 ->assertSee('Historial de asignaciones')
+                ->assertSee('Cada componente es un bien patrimonial asignado')
+                ->assertSee('características técnicas actuales')
+                ->assertSee('data-global-detail-root', false)
+                ->assertSee('data-technical-fields', false)
                 ->assertSee('data-withdraw-form', false)
                 ->assertSee('data-assignment-form', false);
         }

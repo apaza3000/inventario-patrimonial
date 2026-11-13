@@ -10,6 +10,7 @@ if (search) {
     const detailMessage = detailRoot.querySelector('[data-bien-detail-message]');
     const detailFields = detailRoot.querySelector('[data-bien-detail-fields]');
     let timer, request = 0, detailRequest = 0, page = 1, lastPage = 1, busy = false;
+    let detailTrigger = input;
     const open = (visible) => { panel.hidden = !visible; input.setAttribute('aria-expanded', String(visible)); };
     const close = () => {
         clearTimeout(timer); request += 1; busy = false;
@@ -22,8 +23,9 @@ if (search) {
             404: 'El bien ya no está disponible o está fuera de tu alcance.',
             422: 'Escribe entre 2 y 150 caracteres para buscar.' }[code]) || 'No se pudo completar la consulta. Inténtalo nuevamente.';
     };
-    const showDetail = async (id) => {
+    const showDetail = async (id, trigger = input) => {
         close(); const token = ++detailRequest;
+        detailTrigger = trigger;
         detailFields.hidden = true; detailMessage.textContent = 'Cargando detalle…';
         if (!dialog.open) dialog.showModal();
         try {
@@ -77,9 +79,16 @@ if (search) {
     previous.addEventListener('click', () => { if (!busy && page > 1) load(page - 1); });
     next.addEventListener('click', () => { if (!busy && page < lastPage) load(page + 1); });
     document.addEventListener('pointerdown', (event) => { if (!search.contains(event.target)) close(); });
+    // Other views can open the existing read-only asset card without duplicating its API or modal.
+    document.addEventListener('click', (event) => {
+        const trigger = event.target.closest?.('[data-view-bien-detail]');
+        if (!trigger || trigger.disabled || trigger.getAttribute('aria-disabled') === 'true' || !/^[1-9]\d{0,9}$/.test(trigger.dataset.viewBienDetail)) return;
+        event.preventDefault();
+        return showDetail(trigger.dataset.viewBienDetail, trigger);
+    });
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && !panel.hidden) { close(); input.focus(); }
     });
     detailRoot.querySelector('[data-close-bien-detail]').addEventListener('click', () => dialog.close());
-    dialog.addEventListener('close', () => { detailRequest += 1; input.focus(); });
+    dialog.addEventListener('close', () => { detailRequest += 1; (detailTrigger?.isConnected ? detailTrigger : input).focus(); });
 }

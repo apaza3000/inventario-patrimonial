@@ -101,6 +101,7 @@
                 </div>
                 <section class="stations-components" aria-labelledby="active-components-title">
                     <div class="catalog-section-heading"><h2 id="active-components-title">Componentes activos</h2><span data-active-count></span></div>
+                    <p class="catalog-subtitle">Cada componente es un bien patrimonial asignado a la estación. Selecciona «Ver bien» para consultar sus características técnicas actuales.</p>
                     <div class="catalog-table-scroll">
                         <table class="catalog-table stations-active-table">
                             <colgroup><col><col><col><col></colgroup>
@@ -111,6 +112,7 @@
                 </section>
                 <section class="stations-components" aria-labelledby="components-history-title">
                     <div class="catalog-section-heading"><h2 id="components-history-title">Historial de asignaciones</h2></div>
+                    <p class="catalog-subtitle">Este historial registra asignaciones y retiros de bienes. La opción «Ver bien» muestra la ficha actual del bien.</p>
                     <div class="catalog-table-scroll">
                         <table class="catalog-table stations-history-table">
                             <colgroup><col><col><col><col><col></colgroup>

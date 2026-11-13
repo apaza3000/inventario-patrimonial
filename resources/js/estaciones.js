@@ -175,6 +175,15 @@ if (root) {
         });
     });
 
+    const assetDetailAction = (parent, item) => {
+        const id = item.bien?.id ?? item.bien_id;
+        if (!Number.isSafeInteger(Number(id)) || Number(id) <= 0) return;
+        const button = document.createElement('button');
+        button.type = 'button'; button.textContent = 'Ver bien';
+        button.dataset.viewBienDetail = String(id);
+        button.setAttribute('aria-label', `Ver bien ${item.bien?.cbi ?? `ID ${id}`}: ${item.bien?.descripcion ?? 'Detalle del bien'}`);
+        parent.append(button);
+    };
     const renderComponents = (items) => {
         const activeBody = find('[data-active-components]');
         const historyBody = find('[data-components-history]');
@@ -191,13 +200,17 @@ if (root) {
             cell(row, date(item.fecha_asignacion));
             const actions = cell(row, '');
             actions.className = 'catalog-row-actions';
+            assetDetailAction(actions, item);
             action(actions, 'Retirar', () => openWithdrawal(item));
             activeBody.append(row);
         });
         items.forEach((item) => {
             const row = document.createElement('tr');
             cell(row, item.bien?.cbi);
-            cell(row, item.bien?.descripcion);
+            const description = cell(row, item.bien?.descripcion);
+            const actions = document.createElement('div');
+            actions.className = 'catalog-row-actions stations-history-actions';
+            assetDetailAction(actions, item); description.append(actions);
             cell(row, date(item.fecha_asignacion));
             cell(row, date(item.fecha_retiro));
             badge(row, item.activo);
