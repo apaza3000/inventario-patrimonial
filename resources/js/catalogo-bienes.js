@@ -23,7 +23,6 @@ if (catalog) {
     let currentPage = 1;
     let lastPage = 1;
     let total = 0;
-    let perPage = 15;
     let loading = false;
     let sedes = new Map();
     let sedesRequest;
@@ -33,6 +32,18 @@ if (catalog) {
     let detailRequestId = 0;
     let pageRequestId = 0;
     let category = 'todos';
+    let searchTimer;
+    let filterOptionsReady = false;
+    let filterOptionsRequest;
+    let environments = [];
+    const filters = Object.fromEntries(['sede_id', 'ambiente_id', 'estado_id', 'condicion_id'].map((key) => [key, catalog.querySelector('[data-catalog-' + key.replaceAll('_', '-') + ']')]));
+    const requestParams = (page) => {
+        const params = { page, categoria: category };
+        const q = pageSearch.value.trim();
+        if (q) params.q = q;
+        Object.entries(filters).forEach(([key, field]) => { if (field.value) params[key] = field.value; });
+        return params;
+    };
     let technicalOptions = null;
     const categoryButtons = catalog.querySelectorAll('[data-catalog-category]');
     const setCategory = (value) => {
@@ -76,19 +87,12 @@ if (catalog) {
         return cell;
     };
 
-    const normalizeSearch = (value) => String(value ?? '')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLocaleLowerCase('es');
-
     const renderRows = (bienes) => {
         rows.replaceChildren();
 
         if (bienes.length === 0) {
             const row = document.createElement('tr');
-            const cell = addCell(row, pageSearch.value.trim()
-                ? 'No hay coincidencias en esta página.'
-                : 'No hay bienes registrados.');
+            const cell = addCell(row, 'No hay bienes que coincidan con la búsqueda, categoría y filtros.');
             cell.colSpan = 8;
             cell.className = 'catalog-empty-cell';
             rows.append(row);
@@ -132,33 +136,21 @@ if (catalog) {
         }
     };
 
-    const filterCurrentPage = () => {
-        const query = normalizeSearch(pageSearch.value.trim());
-        const matches = query
-            ? currentBienes.filter((bien) => normalizeSearch(bien.cbi).includes(query)
-                || normalizeSearch(bien.descripcion).includes(query))
-            : currentBienes;
-
-        renderRows(matches);
-        searchSummary.textContent = query
-            ? `${matches.length} ${matches.length === 1 ? 'coincidencia' : 'coincidencias'} en esta página.`
-            : '';
-    };
-
     const updatePagination = () => {
-        pageLabel.textContent = `Página ${currentPage} de ${lastPage}`;
-        count.textContent = `${total} ${total === 1 ? 'bien registrado' : 'bienes registrados'}`;
-        previousButton.disabled = loading || currentPage <= 1;
-        nextButton.disabled = loading || currentPage >= lastPage;
+        pageLabel.textContent = pageLoaded ? `Página ${currentPage} de ${lastPage}` : 'Página —';
+        count.textContent = pageLoaded ? `${total} ${total === 1 ? 'bien encontrado' : 'bienes encontrados'}` : '';
+        previousButton.disabled = loading || !pageLoaded || currentPage <= 1;
+        nextButton.disabled = loading || !pageLoaded || currentPage >= lastPage;
         categoryButtons.forEach((button) => { button.disabled = loading; });
     };
 
     const loadPage = async (page, notice = '') => {
+        clearTimeout(searchTimer);
         const requestId = ++pageRequestId;
         loading = true;
         previousButton.disabled = true;
         nextButton.disabled = true;
-        pageSearch.disabled = true;
+
         retryButton.hidden = true;
         message.textContent = 'Cargando bienes…';
         pageLoaded = false;
@@ -166,28 +158,33 @@ if (catalog) {
         rows.replaceChildren();
         updatePagination();
 
-        const [bienesResult, sedesResult] = await Promise.allSettled([
-            window.axios.get(catalog.dataset.bienesUrl, { params: { page, categoria: category } }),
+        const [bienesResult, sedesResult, filtersResult] = await Promise.allSettled([
+            window.axios.get(catalog.dataset.bienesUrl, { params: requestParams(page) }),
             loadSedes(),
+            loadFilterOptions(),
         ]);
 
         if (requestId !== pageRequestId) return;
 
         if (bienesResult.status === 'fulfilled') {
             const pagination = bienesResult.value.data;
+            if (page > Math.max(1, pagination.last_page)) return loadPage(Math.max(1, pagination.last_page), notice);
             currentPage = pagination.current_page;
             lastPage = Math.max(1, pagination.last_page);
             total = pagination.total;
-            perPage = pagination.per_page;
             currentBienes = pagination.data;
             pageLoaded = true;
-            filterCurrentPage();
+            renderRows(currentBienes);
+            searchSummary.textContent = total + ' coincidencias en todos los registros autorizados.';
             message.textContent = sedesResult.status === 'rejected'
                 ? 'No se pudieron cargar los nombres de sede. Reintenta la carga.'
                 : notice;
-            retryButton.hidden = sedesResult.status !== 'rejected';
+            if (filtersResult.status === 'rejected') message.textContent = 'No se pudieron cargar los filtros. Reintenta la carga.';
+            retryButton.hidden = sedesResult.status !== 'rejected' && filtersResult.status !== 'rejected';
         } else if (!handleAuthError(bienesResult.reason)) {
-            message.textContent = bienesResult.reason.response?.status === 403
+            message.textContent = bienesResult.reason.response?.status === 422
+                ? 'Revisa la búsqueda y los filtros seleccionados.'
+                : bienesResult.reason.response?.status === 403
                 ? 'No tienes permiso para consultar este catálogo.'
                 : 'No se pudieron cargar los bienes. Inténtalo de nuevo.';
             retryButton.hidden = bienesResult.reason.response?.status === 403;
@@ -195,7 +192,7 @@ if (catalog) {
 
         if (sedesResult.status === 'rejected') handleAuthError(sedesResult.reason);
         loading = false;
-        pageSearch.disabled = !pageLoaded;
+
         updatePagination();
     };
 
@@ -223,7 +220,6 @@ if (catalog) {
     categoryButtons.forEach((button) => button.addEventListener('click', () => {
         if (loading) return;
         setCategory(button.dataset.catalogCategory);
-        pageSearch.value = '';
         loadPage(1);
     }));
 
@@ -287,15 +283,51 @@ if (catalog) {
         formMessage.textContent = '';
     });
 
-    const navigatePage = (page) => {
-        pageSearch.value = '';
-        filterCurrentPage();
-        loadPage(page);
+    const updateEnvironments = () => {
+        const current = filters.ambiente_id.value;
+        const visible = environments.filter((item) => !filters.sede_id.value || String(item.sede_id) === filters.sede_id.value);
+        fillOptions(filters.ambiente_id, visible, (item) => item.sede?.nombre ? item.nombre + ' (' + item.sede.nombre + ')' : item.nombre, 'Todos los ambientes');
+        filters.ambiente_id.value = visible.some((item) => String(item.id) === current) ? current : '';
     };
-
-    pageSearch.addEventListener('input', filterCurrentPage);
-    previousButton.addEventListener('click', () => navigatePage(currentPage - 1));
-    nextButton.addEventListener('click', () => navigatePage(currentPage + 1));
+    const loadFilterOptions = async () => {
+        if (filterOptionsReady) return;
+        if (filterOptionsRequest) return filterOptionsRequest;
+        filterOptionsRequest = (async () => {
+            const [, ambientes, estados, condiciones] = await Promise.all([
+                loadSedes(), window.axios.get(catalog.dataset.ambientesUrl),
+                window.axios.get(catalog.dataset.estadosUrl), window.axios.get(catalog.dataset.condicionesUrl),
+            ]);
+            fillOptions(filters.sede_id, Array.from(sedes, ([id, nombre]) => ({ id, nombre })), (item) => item.nombre, 'Todas las sedes');
+            environments = ambientes.data.data; updateEnvironments();
+            fillOptions(filters.estado_id, estados.data.data, (item) => item.nombre, 'Todos los estados');
+            fillOptions(filters.condicion_id, condiciones.data.data, (item) => item.nombre, 'Todas las condiciones');
+            Object.values(filters).forEach((field) => { field.disabled = false; });
+            filterOptionsReady = true;
+        })().finally(() => { filterOptionsRequest = null; });
+        return filterOptionsRequest;
+    };
+    const refreshSearch = (delay = 0) => {
+        clearTimeout(searchTimer); pageRequestId += 1;
+        rows.replaceChildren(); currentBienes = []; pageLoaded = false; loading = true; updatePagination();
+        count.textContent = ''; searchSummary.textContent = '';
+        message.textContent = 'Buscando bienes...';
+        if (delay) searchTimer = setTimeout(() => loadPage(1), delay);
+        else loadPage(1);
+    };
+    pageSearch.addEventListener('input', () => refreshSearch(300));
+    pageSearch.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') { event.preventDefault(); refreshSearch(); }
+    });
+    Object.entries(filters).forEach(([key, field]) => field.addEventListener('change', () => {
+        if (key === 'sede_id') updateEnvironments();
+        refreshSearch();
+    }));
+    catalog.querySelector('[data-catalog-clear]').addEventListener('click', () => {
+        pageSearch.value = ''; Object.values(filters).forEach((field) => { field.value = ''; });
+        updateEnvironments(); refreshSearch();
+    });
+    previousButton.addEventListener('click', () => loadPage(currentPage - 1));
+    nextButton.addEventListener('click', () => loadPage(currentPage + 1));
     retryButton.addEventListener('click', () => loadPage(currentPage));
 
     const showDetail = async (id) => {

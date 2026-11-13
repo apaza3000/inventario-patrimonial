@@ -29,15 +29,32 @@ class BienController extends Controller
         'estacion_componentes' => 'componentes de estación',
     ];
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, AlcanceDatosService $alcance): JsonResponse
     {
         $request->validate([
             'categoria' => ['sometimes', Rule::in(['todos', ...RegistroBienService::CATEGORIAS])],
             'cbi' => ['sometimes', 'required', 'string', 'max:25'],
+            'q' => ['sometimes', 'required', 'string', 'max:150'],
+            'sede_id' => ['sometimes', 'integer', 'min:1', 'exists:sedes,id'],
+            'ambiente_id' => ['sometimes', 'integer', 'min:1', 'exists:ambientes,id'],
+            'estado_id' => ['sometimes', 'integer', 'min:1', 'exists:estados_bien,id'],
+            'condicion_id' => ['sometimes', 'integer', 'min:1', 'exists:condiciones_bien,id'],
+            'page' => ['sometimes', 'integer', 'min:1'],
         ]);
-        $query = Bien::with(self::RELATIONS);
+        $query = $alcance->bienesConsulta($request->user('web'))->with(self::RELATIONS);
         if ($request->has('cbi')) {
             $query->where('cbi', $request->input('cbi'));
+        }
+        if ($request->has('q')) {
+            $term = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], trim($request->input('q'))).'%';
+            $query->where(fn ($q) => $q->whereRaw("cbi LIKE ? ESCAPE '!'", [$term])
+                ->orWhereRaw("descripcion LIKE ? ESCAPE '!'", [$term]));
+        }
+        foreach (['ambiente_id', 'estado_id', 'condicion_id'] as $field) {
+            if ($request->has($field)) $query->where($field, $request->integer($field));
+        }
+        if ($request->has('sede_id')) {
+            $query->whereHas('ambiente', fn ($q) => $q->where('sede_id', $request->integer('sede_id')));
         }
         match ($request->input('categoria', 'todos')) {
             'computadoras' => $query->whereHas('equipo.equipoComputo'),

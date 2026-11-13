@@ -69,6 +69,7 @@ function setup({ failList = false, failSave = false, deferFirstList = false } = 
                 marcas: [{ id: 17, nombre: 'Marca real del catálogo' }], tipos_mueble: [{ id: 33, nombre: 'Silla' }],
                 tipos_equipo: [{ id: 41, nombre: 'CPU', categoria: 'computadoras' }, { id: 57, nombre: 'LAPTOP', categoria: 'computadoras' }, { id: 83, nombre: 'MONITOR', categoria: 'monitores' }, { id: 92, nombre: 'EQUIPO', categoria: 'otros-equipos' }],
             } } };
+            if (url === '/api/ambientes') return { data: { data: [{ id: 1, nombre: 'Ambiente 1', sede_id: 1 }, { id: 2, nombre: 'Ambiente 2', sede_id: 2 }] } };
             if (url === '/api/bienes/1') return { data: { data: detail } };
             return { data: { data: [{ id: 1, nombre: 'Opción' }] } };
         },
@@ -78,7 +79,7 @@ function setup({ failList = false, failSave = false, deferFirstList = false } = 
             return { data: { data: { id: 99 } } };
         },
     };
-    vm.runInNewContext(source, { document: { querySelector: () => catalog, createElement: (tag) => new Element(tag) }, window: { axios }, Date, Option: class { constructor(text, value) { this.textContent = text; this.value = value; } } });
+    vm.runInNewContext(source, { document: { querySelector: () => catalog, createElement: (tag) => new Element(tag) }, window: { axios }, setTimeout, clearTimeout, Date, Option: class { constructor(text, value) { this.textContent = text; this.value = value; } } });
     const category = async (key) => { categories.find((button) => button.dataset.catalogCategory === key).emit('click'); await flush(); };
     const open = async () => { find('[data-open-bien-dialog]').emit('click'); await flush(); };
     const technicalCategory = (key) => { form.elements.categoria.value = key; form.elements.categoria.emit('change'); };
@@ -99,6 +100,60 @@ test('category tabs request server pagination and reset the page without downloa
     ]);
     assert.equal(s.categories[3]['aria-pressed'], 'true');
     assert.equal(s.categories[1]['aria-pressed'], 'false');
+});
+
+test('partial CBI and combined filters use server requests and survive pagination and category changes', async () => {
+    const s = setup(); await flush();
+    s.find('[data-catalog-search]').value = '02';
+    s.find('[data-catalog-sede-id]').value = '1';
+    s.find('[data-catalog-ambiente-id]').value = '1';
+    s.find('[data-catalog-estado-id]').value = '1';
+    s.find('[data-catalog-condicion-id]').value = '2';
+    s.find('[data-catalog-search]').emit('keydown', { key: 'Enter' }); await flush();
+    await s.category('computadoras');
+    s.find('[data-catalog-next]').emit('click'); await flush();
+    const request = s.gets.filter((item) => item.url === '/api/bienes').at(-1);
+    assert.deepEqual(JSON.parse(JSON.stringify(request.params)), { page: 2, categoria: 'computadoras', q: '02', sede_id: '1', ambiente_id: '1', estado_id: '1', condicion_id: '2' });
+    // Server results must not be filtered again on the visible page.
+    assert.equal(s.find('[data-catalog-rows]').children.length, 1);
+    assert.match(s.find('[data-catalog-count]').textContent, /16/);
+});
+
+test('changing site clears incompatible environments; clear restores unfiltered first page', async () => {
+    const s = setup(); await flush();
+    s.find('[data-catalog-ambiente-id]').value = '2';
+    s.find('[data-catalog-sede-id]').value = '1';
+    s.find('[data-catalog-sede-id]').emit('change'); await flush();
+    assert.equal(s.find('[data-catalog-ambiente-id]').value, '');
+    assert.equal(s.find('[data-catalog-ambiente-id]').options.some((option) => option.value === '2'), false);
+    s.find('[data-catalog-search]').value = '02';
+    s.find('[data-catalog-clear]').emit('click'); await flush();
+    const params = s.gets.filter((item) => item.url === '/api/bienes').at(-1).params;
+    assert.deepEqual(JSON.parse(JSON.stringify(params)), { page: 1, categoria: 'todos' });
+    assert.equal(s.find('[data-catalog-sede-id]').disabled, false);
+});
+
+test('typing waits briefly and Enter cancels the delay without fetching every page', async () => {
+    const s = setup(); await flush();
+    const before = s.gets.filter((item) => item.url === '/api/bienes').length;
+    s.find('[data-catalog-search]').value = '0'; s.find('[data-catalog-search]').emit('input');
+    s.find('[data-catalog-search]').value = '02'; s.find('[data-catalog-search]').emit('input');
+    assert.equal(s.gets.filter((item) => item.url === '/api/bienes').length, before);
+    await new Promise((resolve) => setTimeout(resolve, 340)); await flush();
+    assert.equal(s.gets.filter((item) => item.url === '/api/bienes').length, before + 1);
+    s.find('[data-catalog-search]').value = '024'; s.find('[data-catalog-search]').emit('input');
+    s.find('[data-catalog-search]').emit('keydown', { key: 'Enter' }); await flush();
+    await new Promise((resolve) => setTimeout(resolve, 340));
+    assert.equal(s.gets.filter((item) => item.url === '/api/bienes').length, before + 2);
+});
+
+test('a late list cannot replace the current server search or its total', async () => {
+    const s = setup({ deferFirstList: true }); await flush();
+    s.find('[data-catalog-search]').value = '02';
+    s.find('[data-catalog-search]').emit('keydown', { key: 'Enter' }); await flush();
+    s.resolveOldList(); await flush();
+    assert.match(s.find('[data-catalog-count]').textContent, /16/);
+    assert.doesNotMatch(s.find('[data-catalog-count]').textContent, /999/);
 });
 
 test('registration loads actual option IDs, switches technical fields and omits hidden data', async () => {

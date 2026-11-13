@@ -46,15 +46,17 @@
         <section class="catalog-filters" aria-labelledby="catalog-filters-title">
             <div class="catalog-section-heading">
                 <h2 id="catalog-filters-title">Filtros</h2>
-                <span>La búsqueda se limita a la página visible</span>
+                <span>Búsqueda en todos los bienes autorizados</span>
             </div>
             <div class="catalog-filter-grid">
-                <label>CBI o descripción en esta página<input type="search" placeholder="Buscar en esta página" data-catalog-search disabled></label>
-                <label>Sede<select disabled><option>Todas las sedes</option></select></label>
-                <label>Ambiente<select disabled><option>Todos los ambientes</option></select></label>
-                <label>Estado<select disabled><option>Todos los estados</option></select></label>
-                <label>Condición<select disabled><option>Todas las condiciones</option></select></label>
+                <label>CBI o descripción<input type="search" maxlength="150" placeholder="Ejemplo: 02" data-catalog-search aria-describedby="catalog-search-help"></label>
+                <label>Sede<select data-catalog-sede-id disabled><option value="">Todas las sedes</option></select></label>
+                <label>Ambiente<select data-catalog-ambiente-id disabled><option value="">Todos los ambientes</option></select></label>
+                <label>Estado<select data-catalog-estado-id disabled><option value="">Todos los estados</option></select></label>
+                <label>Condición<select data-catalog-condicion-id disabled><option value="">Todas las condiciones</option></select></label>
             </div>
+            <p id="catalog-search-help" class="catalog-subtitle">Escribe un CBI parcial o una descripción. Las coincidencias aparecen en la tabla; usa Ver detalle para consultar el bien.</p>
+            <button type="button" class="catalog-secondary-button" data-catalog-clear>Limpiar búsqueda y filtros</button>
             <p class="catalog-search-summary" data-catalog-search-summary aria-live="polite"></p>
         </section>
 
