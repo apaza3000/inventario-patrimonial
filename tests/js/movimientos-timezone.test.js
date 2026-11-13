@@ -3,19 +3,24 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
-const source = readFileSync(new URL('../../resources/js/movimientos.js', import.meta.url), 'utf8');
+const pickerSource = readFileSync(new URL('../../resources/js/bien-search.js', import.meta.url), 'utf8').replace('export function', 'function');
+const source = pickerSource + readFileSync(new URL('../../resources/js/movimientos.js', import.meta.url), 'utf8').replace(/^import .*;\r?\n/, '');
 const flush = async () => { for (let i = 0; i < 8; i++) await new Promise(setImmediate); };
 
 class Element {
-    constructor() { this.listeners = {}; this.elements = {}; this.value = ''; this.dataset = {}; this.options = []; }
+    constructor() { this.listeners = {}; this.elements = {}; this.value = ''; this.dataset = {}; this.options = []; this.children = []; }
     addEventListener(name, callback) { this.listeners[name] = callback; }
-    emit(name) { return this.listeners[name]?.({ preventDefault() {}, currentTarget: this }); }
+    emit(name, event = {}) { return this.listeners[name]?.({ preventDefault() {}, currentTarget: this, ...event }); }
+    setAttribute(name, value) { (this.attributes ??= {})[name] = String(value); }
+    removeAttribute(name) { delete this.attributes?.[name]; }
+    setCustomValidity(value) { this.validationMessage = value; }
+    append(...items) { this.children.push(...items); }
     querySelectorAll() { return []; }
     showModal() { this.open = true; }
     close() { this.open = false; this.emit('close'); }
     reset() { Object.values(this.elements).forEach((item) => { item.value = ''; }); }
     reportValidity() { return true; }
-    replaceChildren(...options) { this.options = [...options]; }
+    replaceChildren(...options) { this.options = [...options]; this.children = [...options]; }
     add(option) { this.options.push(option); }
 }
 
@@ -30,7 +35,7 @@ function setup(instant = '2026-10-02T15:00:00Z', signature = '2026-10-02T16:30:0
         return nodes.get(selector);
     };
     const root = new Element(); root.querySelector = find;
-    root.dataset = { movementsUrl: '/api/movimientos', optionsUrl: '/api/movimientos/opciones', csrfUrl: '/sanctum/csrf-cookie' };
+    root.dataset = { movementsUrl: '/api/movimientos', optionsUrl: '/api/movimientos/opciones', bienSearchUrl: '/api/movimientos/bienes', csrfUrl: '/sanctum/csrf-cookie' };
     const form = find('[data-movement-create-form]');
     for (const field of ['bien_id', 'ambiente_destino_id', 'ordenado_por', 'ejecutado_por', 'fecha_movimiento', 'motivo', 'observaciones']) {
         form.elements[field] = new Element();
@@ -42,6 +47,7 @@ function setup(instant = '2026-10-02T15:00:00Z', signature = '2026-10-02T16:30:0
             if (url.endsWith('/opciones')) return { data: { data: {
                 bienes: [{ id: 1, ambiente_id: 2 }], ambientes: [{ id: 2, nombre: 'Origen' }, { id: 3, nombre: 'Destino' }], responsables: [],
             } } };
+            if (url === '/api/movimientos/bienes') return { data: { data: [{ id: 1, cbi: '001', descripcion: 'Bien', ambiente_id: 2 }], total: 1, current_page: 1, last_page: 1 } };
             if (url.endsWith('/csrf-cookie')) return { data: {} };
             return { data: { data: { id: 1, estado: 'finalizado', fecha_movimiento: '2026-10-02T15:00:00.000000Z', fecha_firma: signature } } };
         },
@@ -50,8 +56,8 @@ function setup(instant = '2026-10-02T15:00:00Z', signature = '2026-10-02T16:30:0
     class Clock extends Date {
         constructor(...args) { super(...(args.length ? args : [instant])); }
     }
-    vm.runInNewContext(source, {
-        document: { querySelector: () => root }, window: { axios }, Date: Clock,
+    vm.runInNewContext(source, { setTimeout, clearTimeout,
+        document: { querySelector: () => root, createElement: () => new Element() }, window: { axios }, Date: Clock,
         Option: class { constructor(label, value) { this.textContent = label; this.value = value; } },
         Intl, console,
     });
@@ -75,6 +81,7 @@ test('registration defaults to Lima across the date boundary and submits the loc
     const { find, form, calls } = setup('2026-01-01T03:04:05Z');
     find('[data-new-movement]').emit('click'); await flush();
     assert.equal(form.elements.fecha_movimiento.value, '2025-12-31T22:04:05');
+    find('[data-bien-search]').value = '00'; await find('[data-bien-search]').emit('keydown', { key: 'Enter' }); await flush();
     form.elements.bien_id.value = '1'; form.elements.ambiente_destino_id.value = '3';
     form.elements.ordenado_por.value = '1'; form.elements.ejecutado_por.value = '1'; form.elements.motivo.value = 'Prueba';
     await form.emit('submit'); await flush();

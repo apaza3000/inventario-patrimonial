@@ -1,3 +1,5 @@
+import { createBienSearch } from './bien-search';
+
 const root = document.querySelector('[data-movements-root]');
 
 if (root) {
@@ -13,6 +15,7 @@ if (root) {
     const uploadForm = find('[data-movement-upload-form]');
     const notice = find('[data-movement-notice]');
     let current = null, detailId = null, detailRequest = 0, downloadRequest = 0;
+    let bienPicker, pickerLoading = false;
     let options = null, optionsLoaded = false, uploadTarget = null;
     const labels = { pendiente_firma: 'Pendiente de firma', finalizado: 'Finalizado' };
     const state = (value) => labels[value] ?? value ?? '—';
@@ -66,21 +69,27 @@ if (root) {
         const retry = find('[data-movements-retry]');
         const previous = find('[data-movements-previous]');
         const next = find('[data-movements-next]');
+        const filterNames = ['bien_id', 'desde', 'hasta', 'ambiente_origen_id', 'ambiente_destino_id', 'estado'];
+        const filters = Object.fromEntries(filterNames.map((name) => [name, find('[data-movements-filter-' + name + ']')]));
+        let searchTimer;
+        const params = (target) => {
+            const result = { page: target }; if (search.value.trim()) result.q = search.value.trim();
+            Object.entries(filters).forEach(([key, field]) => { if (field?.value) result[key] = field.value; }); return result;
+        };
         let rows = [], page = 1, last = 1, request = 0, loading = false, loaded = false;
         const controls = () => {
-            search.disabled = loading || !loaded;
+            search.disabled = false;
             previous.disabled = loading || !loaded || page <= 1;
             next.disabled = loading || !loaded || page >= last;
         };
         const render = () => {
-            const query = normalize(search.value.trim());
-            const matches = rows.filter((item) => !query || [item.id, item.bien?.cbi, item.bien?.descripcion,
-                item.ambiente_origen?.nombre, item.ambiente_destino?.nombre].some((value) => normalize(value).includes(query)));
+            const query = search.value.trim() || Object.values(filters).some((field) => field?.value);
+            const matches = rows;
             body.replaceChildren();
-            find('[data-movements-summary]').textContent = query ? `${matches.length} coincidencias en esta página.` : '';
+            find('[data-movements-summary]').textContent = query ? 'Resultados de todos los movimientos autorizados.' : '';
             if (!matches.length) {
                 const row = document.createElement('tr');
-                const td = cell(row, query ? 'No hay coincidencias en esta página.' : 'No hay movimientos para mostrar.');
+                const td = cell(row, query ? 'No hay movimientos que coincidan con los filtros.' : 'No hay movimientos para mostrar.');
                 td.colSpan = 8; td.className = 'catalog-empty-cell'; body.append(row);
             }
             matches.forEach((item) => {
@@ -96,11 +105,12 @@ if (root) {
             });
         };
         const load = async (target = page) => {
-            const token = ++request;
-            loading = true; loaded = false; rows = []; search.value = ''; render(); controls();
+            clearTimeout(searchTimer); const token = ++request;
+            loading = true; loaded = false; rows = []; render(); controls();
+            find('[data-movements-count]').textContent = '';
             message.textContent = 'Cargando movimientos…'; retry.hidden = true;
             try {
-                const { data } = await window.axios.get(base, { params: { page: target } });
+                const { data } = await window.axios.get(base, { params: params(target) });
                 if (token !== request) return;
                 if (target > Math.max(1, data.last_page)) return load(Math.max(1, data.last_page));
                 rows = data.data; page = data.current_page; last = Math.max(1, data.last_page); loaded = true;
@@ -114,9 +124,21 @@ if (root) {
             } finally { if (token === request) { loading = false; controls(); } }
         };
         reloadList = () => load();
-        search.addEventListener('input', render);
+        const refresh = (delay = 0) => { clearTimeout(searchTimer); request += 1; rows = []; loaded = false; render(); controls(); if (delay) searchTimer = setTimeout(() => load(1), delay); else load(1); };
+        search.addEventListener('input', () => refresh(300));
+        search.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); refresh(); } });
+        Object.values(filters).forEach((field) => field?.addEventListener('change', () => refresh()));
+        filters.bien_id?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); refresh(); } });
+        find('[data-movements-clear]')?.addEventListener('click', () => { search.value = ''; Object.values(filters).forEach((field) => { if (field) field.value = ''; }); refresh(); });
+        const loadEnvironments = async () => {
+            try {
+                const { data } = await window.axios.get(root.dataset.environmentsUrl);
+                ['ambiente_origen_id', 'ambiente_destino_id'].forEach((key) => { const select = filters[key]; if (!select) return; const current = select.value; select.replaceChildren(new Option('Todos los ambientes', '')); data.data.forEach((item) => select.add(new Option(item.nombre, String(item.id)))); select.value = current; select.disabled = false; });
+            } catch (error) { message.textContent = errorText(error); retry.hidden = false; }
+        };
+        loadEnvironments();
         previous.addEventListener('click', () => load(page - 1)); next.addEventListener('click', () => load(page + 1));
-        retry.addEventListener('click', () => load());
+        retry.addEventListener('click', () => { load(); loadEnvironments(); });
         load(1);
     }
     const renderDetail = (item, message = '') => {
@@ -165,25 +187,17 @@ if (root) {
     };
     const selectedBien = () => options?.bienes.find((item) => item.id === Number(createForm.elements.bien_id.value));
     const bienSearch = find('[data-bien-search]');
-    const bienLabel = (item) => `CBI ${item.cbi ?? '—'} · ${item.descripcion} · ID ${item.id}`;
+    const bienLabel = (item) => [`CBI ${item.cbi ?? '—'}`, item.descripcion ?? '—', `ID ${item.id}`, item.ambiente?.nombre ?? options?.ambientes.find((a) => a.id === item.ambiente_id)?.nombre ?? 'Sin ambiente', ...(item.equipo?.serie ? [`Serie ${item.equipo.serie}`] : [])].join(' · ');
     const renderBienOptions = (selectedId = createForm.elements.bien_id.value) => {
-        const query = bienSearch.value.trim().toLocaleLowerCase('es');
-        const items = options?.bienes ?? [];
-        const matches = query ? items.filter((item) => String(item.cbi ?? '').toLocaleLowerCase('es').includes(query)) : items;
-        const selected = items.find((item) => String(item.id) === String(selectedId));
-        const select = createForm.elements.bien_id;
-        fill(select, matches, query && !matches.length ? 'Sin coincidencias' : 'Selecciona un bien', bienLabel);
-        const pinned = selected && !matches.some((item) => item.id === selected.id);
-        if (pinned) select.add(new Option(`${bienLabel(selected)} (selección actual)`, String(selected.id)));
-        select.value = selected ? String(selected.id) : '';
-        find('[data-bien-search-summary]').textContent = query
-            ? `${matches.length} coincidencias en todos los bienes.${pinned ? ' Se conserva la selección actual aunque no coincida con la búsqueda.' : ''}` : '';
-        find('[data-selected-bien]').textContent = selected ? `Bien seleccionado: ${bienLabel(selected)}` : 'Ningún bien seleccionado.';
+        const selected = options?.bienes.find((item) => String(item.id) === String(selectedId));
+        fill(createForm.elements.bien_id, options?.bienes ?? [], 'Selecciona un bien', bienLabel);
+        createForm.elements.bien_id.value = selected ? String(selected.id) : '';
+        find('[data-selected-bien]').textContent = selected ? bienLabel(selected) : 'Selecciona un bien.';
+        bienPicker?.syncSelection();
     };
-    bienSearch.addEventListener('input', () => renderBienOptions());
     const updateOrigin = () => {
         const bien = selectedBien();
-        const origin = options?.ambientes.find((item) => item.id === bien?.ambiente_id);
+        const origin = bien?.ambiente ?? options?.ambientes.find((item) => item.id === bien?.ambiente_id);
         find('[data-origin-label]').value = !bien ? '—' : bien.ambiente_id === null ? '—' : origin?.nombre ?? `Ambiente ID ${bien.ambiente_id}`;
         const destination = createForm.elements.ambiente_destino_id.value;
         fill(createForm.elements.ambiente_destino_id, options?.ambientes.filter((item) => item.id !== bien?.ambiente_id) ?? [], 'Selecciona un destino', (item) => item.nombre);
@@ -195,8 +209,12 @@ if (root) {
         const previous = Object.fromEntries(['bien_id', 'ordenado_por', 'ejecutado_por'].map((key) => [key, createForm.elements[key].value]));
         find('[data-options-retry]').hidden = true;
         try {
-            const { data } = await window.axios.get(root.dataset.optionsUrl);
+            const { data } = await window.axios.get(root.dataset.optionsUrl, { params: { incluir_bienes: 0 } });
             options = data.data;
+            if (previous.bien_id) {
+                const response = await window.axios.get(root.dataset.bienSearchUrl, { params: { bien_id: previous.bien_id } });
+                options.bienes = response.data.data;
+            }
             renderBienOptions(previous.bien_id);
             ['ordenado_por', 'ejecutado_por'].forEach((key) => fill(createForm.elements[key], options.responsables, 'Selecciona un usuario', userName));
             Object.entries(previous).forEach(([key, value]) => {
@@ -204,13 +222,25 @@ if (root) {
             });
             updateOrigin(); optionsLoaded = true; message.textContent = '';
         } catch (error) { message.textContent = errorText(error); find('[data-options-retry]').hidden = [401, 403].includes(error.response?.status); }
-        finally { busy(createDialog, false); bienSearch.disabled = !optionsLoaded; find('[data-save-movement]').disabled = !optionsLoaded; }
+        finally { busy(createDialog, false); bienSearch.disabled = !optionsLoaded; find('[data-save-movement]').disabled = !optionsLoaded || pickerLoading; bienPicker?.controls(!optionsLoaded); }
     };
+    bienPicker = createBienSearch({
+        input: bienSearch, panel: find('[data-bien-suggestions]'), list: find('[data-bien-suggestions]'), previous: find('[data-bien-previous]'), next: find('[data-bien-next]'),
+        clear: find('[data-bien-clear]'), pageLabel: find('[data-bien-page]'), message: find('[data-bien-search-summary]'),
+        url: root.dataset.bienSearchUrl,
+        selected: selectedBien,
+        onSelect: (item) => { createForm.elements.bien_id.value = String(item.id); renderBienOptions(); updateOrigin(); },
+        onResults: (items) => { const selected = selectedBien(); if (!options) return; options.bienes = items.slice(); if (selected && !items.some((item) => item.id === selected.id)) options.bienes.push(selected); renderBienOptions(selected?.id ?? ''); updateOrigin(); },
+        onClear: () => { if (options) options.bienes = []; createForm.elements.bien_id.value = ''; updateOrigin(); },
+        onLoading: (value) => { pickerLoading = value; createForm.elements.bien_id.disabled = value || !optionsLoaded; find('[data-save-movement]').disabled = value || !optionsLoaded; }, errorText,
+    });
+    createDialog.addEventListener('close', () => bienPicker.invalidate());
     createForm.elements.bien_id.addEventListener('change', () => { renderBienOptions(); updateOrigin(); });
     find('[data-options-retry]').addEventListener('click', loadOptions);
     find('[data-new-movement]').addEventListener('click', () => {
-        createForm.reset(); options = null; find('[data-origin-label]').value = '—';
+        bienPicker.invalidate(); createForm.reset(); options = null; find('[data-origin-label]').value = '—';
         bienSearch.value = ''; renderBienOptions('');
+        bienPicker.reset();
         const parts = Object.fromEntries(new Intl.DateTimeFormat('es-PE', {
             timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit',
             hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
@@ -220,7 +250,7 @@ if (root) {
     });
     createForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        if (!optionsLoaded || createDialog.dataset.busy === '1' || !createForm.reportValidity()) return;
+        if (!optionsLoaded || pickerLoading || createDialog.dataset.busy === '1' || !createForm.reportValidity()) return;
         const bien = selectedBien(); if (!bien) return;
         const message = find('[data-form-message]', createForm);
         if (!createForm.elements.motivo.value.trim()) { message.textContent = 'Ingresa el motivo del movimiento.'; return; }

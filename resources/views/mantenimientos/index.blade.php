@@ -5,8 +5,9 @@
     $canManage = app(\App\Services\AlcanceDatosService::class)->tieneAccesoCompleto(auth('web')->user());
 @endphp
 <div class="catalog-page" data-maintenance-root data-maintenance-url="{{ url('/api/mantenimientos') }}" data-login-url="{{ route('login') }}" data-created-notice="{{ request()->boolean('registrado') ? 'Mantenimiento registrado correctamente.' : '' }}"
+    @unless ($canManage) data-types-url="{{ url('/api/tipos-mantenimiento') }}" @endunless
     @if ($canManage)
-        data-types-url="{{ url('/api/tipos-mantenimiento') }}" data-bienes-url="{{ url('/api/bienes') }}"
+        data-types-url="{{ url('/api/tipos-mantenimiento') }}" data-bien-search-url="{{ url('/api/busqueda/bienes') }}" data-bienes-url="{{ url('/api/bienes') }}"
         data-users-url="{{ url('/api/usuarios') }}" data-csrf-url="{{ url('/sanctum/csrf-cookie') }}" data-conditions-url="{{ url('/api/condiciones-bien') }}"
     @endif
 >
@@ -28,8 +29,13 @@
             <p class="catalog-message" data-export-message role="status" aria-live="polite"></p>
         </div>
         <section class="catalog-filters" aria-labelledby="maintenance-search-title">
-            <div class="catalog-section-heading"><h2 id="maintenance-search-title">Buscar registros</h2><span>La búsqueda se limita a la página visible</span></div>
-            <div class="catalog-filter-grid"><label>ID, fecha, CBI, descripción del bien, tipo o técnico<input type="search" data-maintenance-search placeholder="Buscar en esta página" disabled></label></div>
+            <div class="catalog-section-heading"><h2 id="maintenance-search-title">Buscar registros</h2><span>Consulta de todos los registros autorizados</span></div>
+            <div class="catalog-filter-grid">
+                <label>ID, CBI, serie, bien, fecha, tipo o técnico<input type="search" maxlength="150" data-maintenance-search></label>
+                <label>Desde<input type="date" data-maintenance-filter-desde></label><label>Hasta<input type="date" data-maintenance-filter-hasta></label>
+                <label>Tipo<select data-maintenance-filter-tipo_mantenimiento_id disabled><option value="">Todos los tipos</option></select></label>
+                <label>Nombre o apellido del técnico<input type="search" maxlength="201" data-maintenance-filter-tecnico></label>
+            </div><button type="button" class="catalog-secondary-button" data-maintenance-clear>Limpiar filtros</button>
             <p class="catalog-search-summary" data-maintenance-summary aria-live="polite"></p>
         </section>
         <section class="catalog-results" aria-labelledby="maintenance-results-title">

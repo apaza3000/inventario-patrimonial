@@ -7,6 +7,7 @@ use App\Models\Bien;
 use App\Models\Movimiento;
 use App\Models\Usuario;
 use App\Services\MovimientoPdfService;
+use App\Services\BusquedaBienesService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,11 +28,11 @@ class MovimientoController extends Controller
     {
     }
 
-    public function opciones(): JsonResponse
+    public function opciones(Request $request): JsonResponse
     {
         return response()->json([
             'data' => [
-                'bienes' => Bien::query()
+                'bienes' => ! $request->boolean('incluir_bienes', true) ? [] : Bien::query()
                     ->orderBy('id')
                     ->get(['id', 'cbi', 'descripcion', 'ambiente_id']),
                 'ambientes' => Ambiente::query()
@@ -47,11 +48,40 @@ class MovimientoController extends Controller
         ]);
     }
 
-    public function index(): JsonResponse
+    public function bienes(Request $request): JsonResponse
     {
-        return response()->json(
-            Movimiento::with(self::RELATIONS)->orderBy('id')->paginate(15)
-        );
+        $data = $request->validate(['q' => ['required_without:bien_id', 'string', 'min:2', 'max:150'], 'bien_id' => ['sometimes', 'integer', 'min:1'], 'page' => ['sometimes', 'integer', 'min:1']]);
+        // The existing movement workflow permits assistants to select any patrimonial asset.
+        $query = Bien::query();
+        if (isset($data['q'])) BusquedaBienesService::aplicar($query, $data['q']);
+        if (isset($data['bien_id'])) $query->whereKey($data['bien_id']);
+        return response()->json($query
+            ->with(['ambiente', 'equipo' => fn ($q) => $q->select('bien_id', 'serie')])
+            ->orderBy('id')->paginate(15, ['id', 'cbi', 'descripcion', 'ambiente_id']));
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'q' => ['sometimes', 'required', 'string', 'max:150'], 'bien_id' => ['sometimes', 'integer', 'min:1'],
+            'desde' => ['sometimes', 'date_format:Y-m-d'], 'hasta' => ['sometimes', 'date_format:Y-m-d', ...($request->filled('desde') ? ['after_or_equal:desde'] : [])],
+            'ambiente_origen_id' => ['sometimes', 'integer', 'min:1', 'exists:ambientes,id'],
+            'ambiente_destino_id' => ['sometimes', 'integer', 'min:1', 'exists:ambientes,id'],
+            'estado' => ['sometimes', Rule::in([Movimiento::ESTADO_PENDIENTE_FIRMA, Movimiento::ESTADO_FINALIZADO])],
+            'page' => ['sometimes', 'integer', 'min:1'],
+        ]);
+        $query = Movimiento::with(self::RELATIONS);
+        if (isset($data['q'])) {
+            $q = $data['q']; $term = BusquedaBienesService::patron($q);
+            $query->where(fn ($builder) => $builder->whereHas('bien', fn ($b) => BusquedaBienesService::aplicar($b, $q))
+                ->orWhereHas('ambienteOrigen', fn ($b) => $b->whereRaw("nombre LIKE ? ESCAPE '!'", [$term]))
+                ->orWhereHas('ambienteDestino', fn ($b) => $b->whereRaw("nombre LIKE ? ESCAPE '!'", [$term]))
+                ->when(ctype_digit($q), fn ($b) => $b->orWhere('id', (int) $q)));
+        }
+        foreach (['bien_id', 'ambiente_origen_id', 'ambiente_destino_id', 'estado'] as $field) if (isset($data[$field])) $query->where($field, $data[$field]);
+        if (isset($data['desde'])) $query->whereDate('fecha_movimiento', '>=', $data['desde']);
+        if (isset($data['hasta'])) $query->whereDate('fecha_movimiento', '<=', $data['hasta']);
+        return response()->json($query->orderBy('id')->paginate(15));
     }
 
     public function show(int $id): JsonResponse

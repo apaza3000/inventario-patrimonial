@@ -28,12 +28,12 @@ class MovimientosPageTest extends TestCase
         foreach (['superadmin', 'administrador', 'director'] as $role) {
             $this->actingAs($this->user($role), 'web')->get('/movimientos')->assertOk()
                 ->assertSee('data-movements-list', false)
-                ->assertSee('La búsqueda se limita a la página visible')
+                ->assertSee('Consulta de todos los movimientos autorizados')
                 ->assertSee('data-movement-create-form', false)
                 ->assertDontSee('data-movement-lookup-form', false)
                 ->assertDontSee('Consultar por ID')
                 ->assertSee('data-bien-search', false)
-                ->assertSee('La búsqueda incluye todos los bienes recibidos')
+                ->assertSee('Busca desde 2 caracteres')
                 ->assertSee('data-movement-upload-form', false)
                 ->assertSee('Subir PDF firmado y finalizar')
                 ->assertSee('href="'.route('movimientos.index').'" class="menu-item active"', false);
@@ -77,6 +77,18 @@ class MovimientosPageTest extends TestCase
         $response = $this->actingAs($this->user('superadmin'), 'web')->get('/movimientos')->assertOk();
         foreach (['Bien', 'Destino', 'Ordenado por', 'Ejecutado por', 'Fecha y hora', 'Motivo', 'PDF firmado (máximo 10 MB)'] as $label) {
             $response->assertSee('<span class="movement-field-label">'.$label.' <span aria-hidden="true">*</span></span>', false);
+        }
+    }
+
+    public function test_registration_uses_an_accessible_combobox_and_hides_the_internal_selector(): void
+    {
+        foreach (['superadmin', 'administrador', 'director', 'asistente'] as $role) {
+            $this->actingAs($this->user($role), 'web')->get('/movimientos')->assertOk()
+                ->assertSee('role="combobox" aria-autocomplete="list"', false)
+                ->assertSee('aria-controls="movement-bien-suggestions" aria-required="true"', false)
+                ->assertSee('data-bien-suggestions role="listbox"', false)
+                ->assertSee('name="bien_id" data-bien-internal hidden', false)
+                ->assertDontSee('data-bien-search-button', false);
         }
     }
 }

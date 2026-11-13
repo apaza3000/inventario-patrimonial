@@ -1,3 +1,5 @@
+import { createBienSearch } from './bien-search';
+
 const maintenance = document.querySelector('[data-maintenance-root]');
 
 if (maintenance) {
@@ -51,32 +53,38 @@ if (maintenance) {
             return dialog?.dataset.busy === '1' || dialog?.dataset.loading === '1';
         };
         const controls = () => {
-            search.disabled = blocked() || loading || !loaded;
+            search.disabled = blocked() || (!server && (loading || !loaded));
             previous.disabled = blocked() || loading || !loaded || page <= 1;
             next.disabled = blocked() || loading || !loaded || page >= last;
             retry.disabled = blocked() || loading;
             const select = find(`[data-${prefix}-options]`);
             if (select) select.disabled = blocked() || loading || !loaded;
         };
+        const server = prefix === 'maintenance';
+        const filters = server ? Object.fromEntries(['desde', 'hasta', 'tipo_mantenimiento_id', 'tecnico'].map((key) => [key, find('[data-maintenance-filter-' + key + ']')])) : {};
+        let searchTimer;
         const filter = () => {
             const query = normalize(search.value.trim());
-            const matches = items.filter((item) => !query || values(item).some((value) => normalize(value).includes(query)));
-            render(matches, Boolean(query));
-            find(`[data-${prefix}-summary]`).textContent = query ? `${matches.length} coincidencias en esta página.` : '';
+            const matches = server ? items : items.filter((item) => !query || values(item).some((value) => normalize(value).includes(query)));
+            render(matches, Boolean(query) || (server && Object.values(filters).some((field) => field?.value)));
+            find(`[data-${prefix}-summary]`).textContent = query ? (server ? 'Resultados de todos los registros autorizados.' : `${matches.length} coincidencias en esta página.`) : '';
         };
         const load = async (target = page, notice = '') => {
-            const token = ++request;
+            clearTimeout(searchTimer); const token = ++request;
             loading = true;
             loaded = false;
             items = [];
-            search.value = '';
+            if (!server) search.value = '';
             filter();
             controls();
             onChange();
             message.textContent = 'Cargando…';
+            if (server) find('[data-maintenance-count]').textContent = '';
             retry.hidden = true;
             try {
-                const { data } = await window.axios.get(url, { params: { page: target } });
+                const params = { page: target };
+                if (server) { if (search.value.trim()) params.q = search.value.trim(); Object.entries(filters).forEach(([key, field]) => { if (field?.value?.trim()) params[key] = field.value.trim(); }); }
+                const { data } = await window.axios.get(url, { params });
                 if (token !== request) return;
                 if (target > Math.max(1, data.last_page)) return load(Math.max(1, data.last_page), notice);
                 items = data.data;
@@ -97,7 +105,20 @@ if (maintenance) {
                 if (token === request) { loading = false; controls(); onChange(); }
             }
         };
-        search.addEventListener('input', filter);
+        if (server) {
+            const refresh = (delay = 0) => { clearTimeout(searchTimer); request += 1; items = []; loaded = false; filter(); controls(); if (delay) searchTimer = setTimeout(() => load(1), delay); else load(1); };
+            search.addEventListener('input', () => refresh(300));
+            search.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); refresh(); } });
+            Object.values(filters).forEach((field) => field?.addEventListener('change', () => refresh()));
+            filters.tecnico?.addEventListener('input', () => refresh(300));
+            filters.tecnico?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); refresh(); } });
+            find('[data-maintenance-clear]')?.addEventListener('click', () => { search.value = ''; Object.values(filters).forEach((field) => { if (field) field.value = ''; }); refresh(); });
+            const loadTypes = async () => {
+                try { const { data } = await window.axios.get(maintenance.dataset.typesUrl); const select = filters.tipo_mantenimiento_id; if (select) { const current = select.value; select.replaceChildren(new Option('Todos los tipos', '')); data.data.forEach((item) => select.add(new Option(item.nombre, String(item.id)))); select.value = current; select.disabled = false; } }
+                catch (error) { message.textContent = errorText(error); retry.hidden = false; }
+            };
+            loadTypes(); retry.addEventListener('click', loadTypes);
+        } else search.addEventListener('input', filter);
         previous.addEventListener('click', () => load(page - 1));
         next.addEventListener('click', () => load(page + 1));
         retry.addEventListener('click', () => load(page));
@@ -147,7 +168,7 @@ if (maintenance) {
             body.replaceChildren();
             if (!items.length) {
                 const row = document.createElement('tr');
-                cell(row, searched ? 'No hay coincidencias en esta página.' : 'No hay mantenimientos para mostrar.', 'catalog-empty-cell').colSpan = 7;
+                cell(row, searched ? 'No hay coincidencias con la consulta actual.' : 'No hay mantenimientos para mostrar.', 'catalog-empty-cell').colSpan = 7;
                 body.append(row);
             }
             items.forEach((item) => {
@@ -197,12 +218,11 @@ if (maintenance) {
         let conditionsReady = false, conditionRequest = 0;
         let editingId = null, formRequest = 0, recordReady = false, typesReady = false;
         let selectedBien = null, selectedUser = null;
-        const labelBien = (bien) => `ID ${bien.id} · CBI ${bien.cbi ?? '—'} · ${bien.descripcion ?? '—'}`;
-        let userPicker;
+        const labelBien = (bien) => `ID ${bien.id} · CBI ${bien.cbi ?? '—'} · ${bien.descripcion ?? '—'} · ${bien.ambiente?.nombre ?? 'Sin ambiente'}${bien.equipo?.serie ? ` · Serie ${bien.equipo.serie}` : ''}`;
+        let userPicker, bienPicker;
         let bienLoading = false, bienRequest = 0, matches = [];
         const bienSearch = find('[data-bien-search]');
         const bienOptions = find('[data-bien-options]');
-        const searchButton = find('[data-bien-search-button]');
         const refresh = () => {
             const writing = formDialog.dataset.busy === '1';
             const opening = formDialog.dataset.loading === '1';
@@ -216,8 +236,9 @@ if (maintenance) {
             find('[data-current-condition]').textContent = selectedBien ? `Condición actual: ${selectedBien.condicion?.nombre ?? '—'}` : 'Selecciona un bien para consultar su condición actual.';
             bienSearch.disabled = writing || opening;
             bienOptions.disabled = writing || opening || bienLoading;
-            searchButton.disabled = writing || opening || bienLoading;
             userPicker?.controls();
+            bienPicker?.controls(writing || opening);
+            bienPicker?.syncSelection();
             save.disabled = writing || opening || bienLoading || !recordReady || !typesReady || !selectedBien || !userPicker?.ready();
             find('[data-selected-bien]').textContent = selectedBien ? labelBien(selectedBien) : 'Ningún bien seleccionado.';
             find('[data-selected-user]').textContent = selectedUser ? `Técnico: ${userName(selectedUser)} · ID ${selectedUser.id}` : 'Técnico: Sin asignar';
@@ -271,31 +292,7 @@ if (maintenance) {
                 group.append(title, content); fields.append(group);
             });
         };
-        const searchBien = async () => {
-            if (searchButton.disabled) return;
-            const cbi = bienSearch.value.trim();
-            const message = find('[data-bien-message]');
-            const token = ++bienRequest, formToken = formRequest;
-            matches = []; renderBienOptions();
-            if (!cbi || cbi.length > 25) { message.textContent = 'Ingresa el CBI completo (máximo 25 caracteres).'; return; }
-            bienLoading = true; message.textContent = 'Buscando CBI…'; refresh();
-            try {
-                const { data } = await window.axios.get(maintenance.dataset.bienesUrl, { params: { cbi } });
-                if (token !== bienRequest || formToken !== formRequest) return;
-                matches = data.data;
-                renderBienOptions();
-                message.textContent = matches.length ? 'Selecciona explícitamente el bien encontrado.' : 'No hay bienes con ese CBI.';
-                if (selectedBien) message.textContent += ' Se conserva el bien seleccionado hasta elegir otro.';
-            } catch (error) { if (token === bienRequest && formToken === formRequest) message.textContent = errorText(error); }
-            finally { if (token === bienRequest && formToken === formRequest) { bienLoading = false; refresh(); } }
-        };
-        searchButton.addEventListener('click', searchBien);
-        bienSearch.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); searchBien(); } });
-        bienSearch.addEventListener('input', () => {
-            bienRequest += 1; bienLoading = false; matches = []; renderBienOptions();
-            find('[data-bien-message]').textContent = ''; refresh();
-        });
-        bienOptions.addEventListener('change', async () => {
+        const selectBien = async () => {
             const id = bienOptions.value;
             const token = ++bienRequest, formToken = formRequest;
             if (!id) {
@@ -314,7 +311,17 @@ if (maintenance) {
                     find('[data-bien-message]').textContent = errorText(error);
                 }
             } finally { if (token === bienRequest && formToken === formRequest) { bienLoading = false; refresh(); } }
+        };
+        bienPicker = createBienSearch({
+            input: bienSearch, panel: find('[data-bien-suggestions]'), list: find('[data-bien-suggestions]'), previous: find('[data-bien-previous]'), next: find('[data-bien-next]'), clear: find('[data-bien-clear]'),
+            pageLabel: find('[data-bien-page]'), message: find('[data-bien-message]'), url: maintenance.dataset.bienSearchUrl,
+            selected: () => selectedBien,
+            onSelect: (item) => { bienOptions.value = String(item.id); return selectBien(); },
+            onResults: (items) => { matches = items; renderBienOptions(); },
+            onClear: () => { bienRequest += 1; selectedBien = null; conditionSelect.value = ''; renderBienCard(); refresh(); },
+            onLoading: (value) => { bienRequest += 1; bienLoading = value; refresh(); }, errorText,
         });
+        bienOptions.addEventListener('change', selectBien);
         userPicker = picker('user', maintenance.dataset.usersUrl, userName, (item) => [item.nombres, item.apellidos], () => selectedUser, (item) => { selectedUser = item; });
         const loadConditions = async () => {
             if (editingId !== null) return;
@@ -342,7 +349,7 @@ if (maintenance) {
         find('[data-condition-retry]').addEventListener('click', loadConditions);
         const loadForm = async () => {
             const token = ++formRequest;
-            bienRequest += 1; bienLoading = false;
+            bienPicker.invalidate(); bienRequest += 1; bienLoading = false;
             find('[data-bien-message]').textContent = '';
             formDialog.dataset.loading = '1';
             formMessage.textContent = 'Cargando datos del formulario…';
@@ -397,6 +404,7 @@ if (maintenance) {
             editingId = id;
             selectedBien = null;
             bienRequest += 1; bienLoading = false; matches = []; bienSearch.value = '';
+            bienPicker.reset();
             renderBienCard(); renderBienOptions(); find('[data-bien-message]').textContent = '';
             selectedUser = null;
             recordReady = id === null;
@@ -416,7 +424,7 @@ if (maintenance) {
             loadForm();
         };
         find('[data-form-retry]').addEventListener('click', loadForm);
-        formDialog.addEventListener('close', () => { formRequest += 1; bienRequest += 1; userPicker.invalidate(); });
+        formDialog.addEventListener('close', () => { formRequest += 1; bienPicker.invalidate(); bienRequest += 1; userPicker.invalidate(); });
         form.querySelector('[data-cancel-registration]')?.addEventListener('click', (event) => { if (formDialog.dataset.busy === '1') event.preventDefault(); });
         const write = async (method, url, payload) => {
             await window.axios.get(maintenance.dataset.csrfUrl);

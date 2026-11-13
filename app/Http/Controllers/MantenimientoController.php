@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bien;
 use App\Models\Mantenimiento;
 use App\Services\AlcanceDatosService;
+use App\Services\BusquedaBienesService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,12 +21,30 @@ class MantenimientoController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        return response()->json(
-            $this->alcance->mantenimientos($request->user('web'))
-                ->with(self::RELATIONS)
-                ->orderBy('id')
-                ->paginate(15)
-        );
+        $data = $request->validate([
+            'q' => ['sometimes', 'required', 'string', 'max:150'],
+            'desde' => ['sometimes', 'date_format:Y-m-d'], 'hasta' => ['sometimes', 'date_format:Y-m-d', ...($request->filled('desde') ? ['after_or_equal:desde'] : [])],
+            'tipo_mantenimiento_id' => ['sometimes', 'integer', 'min:1', 'exists:tipos_mantenimiento,id'],
+            'tecnico_id' => ['sometimes', 'integer', 'min:1', 'exists:usuarios,id'],
+            'tecnico' => ['sometimes', 'required', 'string', 'max:201'], 'page' => ['sometimes', 'integer', 'min:1'],
+        ]);
+        $query = $this->alcance->mantenimientos($request->user('web'))->with(self::RELATIONS);
+        if (isset($data['q'])) {
+            $text = $data['q']; $term = BusquedaBienesService::patron($text);
+            $query->where(fn ($q) => $q->whereHas('bien', fn ($b) => BusquedaBienesService::aplicar($b, $text))
+                ->orWhereHas('tipoMantenimiento', fn ($b) => $b->whereRaw("nombre LIKE ? ESCAPE '!'", [$term]))
+                ->orWhereHas('tecnico', fn ($b) => $b->whereRaw("nombres LIKE ? ESCAPE '!'", [$term])->orWhereRaw("apellidos LIKE ? ESCAPE '!'", [$term]))
+                ->orWhereRaw("fecha_mantenimiento LIKE ? ESCAPE '!'", [$term])
+                ->when(ctype_digit($text), fn ($b) => $b->orWhere('id', (int) $text)));
+        }
+        foreach (['tipo_mantenimiento_id', 'tecnico_id'] as $field) if (isset($data[$field])) $query->where($field, $data[$field]);
+        if (isset($data['tecnico'])) foreach (preg_split('/\s+/', trim($data['tecnico'])) as $name) {
+            $term = BusquedaBienesService::patron($name);
+            $query->whereHas('tecnico', fn ($q) => $q->whereRaw("nombres LIKE ? ESCAPE '!'", [$term])->orWhereRaw("apellidos LIKE ? ESCAPE '!'", [$term]));
+        }
+        if (isset($data['desde'])) $query->whereDate('fecha_mantenimiento', '>=', $data['desde']);
+        if (isset($data['hasta'])) $query->whereDate('fecha_mantenimiento', '<=', $data['hasta']);
+        return response()->json($query->orderBy('id')->paginate(15));
     }
 
     public function show(Request $request, int $id): JsonResponse

@@ -2,12 +2,15 @@
 <button type="button" class="catalog-retry-button" data-form-retry hidden>Reintentar carga del formulario</button>
 <fieldset class="maintenance-picker">
     <legend><span class="maintenance-field-label">Bien <span aria-hidden="true">*</span></span></legend>
-    <p class="catalog-subtitle">Busca el CBI completo en todos los bienes autorizados y selecciona la coincidencia. Se conservan los ceros iniciales.</p>
+    <p class="catalog-subtitle">Busca por CBI parcial, descripción o serie y selecciona una coincidencia. Se conservan los ceros iniciales.</p>
     <div class="catalog-form-grid">
-        <label>CBI completo<input type="search" maxlength="25" data-bien-search placeholder="Ejemplo: 0243831" aria-describedby="maintenance-bien-message"></label>
-        <div class="maintenance-search-action"><button type="button" class="catalog-secondary-button" data-bien-search-button>Buscar por CBI</button></div>
-        <label class="catalog-form-wide"><span class="maintenance-field-label">Seleccionar bien <span aria-hidden="true">*</span></span><select data-bien-options required disabled><option value="">Selecciona un bien</option></select></label>
+        <div class="bien-search catalog-form-wide">
+            <label>CBI, descripción o serie<input type="search" maxlength="150" data-bien-search placeholder="Ejemplo: 0243831" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="maintenance-bien-suggestions" aria-required="true" autocomplete="off" aria-describedby="maintenance-bien-message"></label>
+            <div id="maintenance-bien-suggestions" class="bien-search-list" data-bien-suggestions role="listbox" aria-label="Bienes encontrados" hidden></div>
+        </div>
+        <select data-bien-options data-bien-internal hidden disabled aria-hidden="true" tabindex="-1"><option value="">Selecciona un bien</option></select>
     </div>
+    <div class="catalog-pagination"><button type="button" class="catalog-secondary-button" data-bien-previous disabled>Anterior</button><span data-bien-page></span><button type="button" class="catalog-secondary-button" data-bien-next disabled>Siguiente</button><button type="button" class="catalog-secondary-button" data-bien-clear>Limpiar selección</button></div>
     <p id="maintenance-bien-message" class="catalog-message" data-bien-message role="status" aria-live="polite"></p>
     <p class="stations-selection" data-selected-bien aria-live="polite">Ningún bien seleccionado.</p>
     <section class="maintenance-bien-card" data-bien-card hidden aria-labelledby="maintenance-bien-title">

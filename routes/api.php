@@ -52,6 +52,7 @@ Route::middleware(['auth:web', 'usuario.activo'])->group(function () {
         Route::get('/inventarios/{bien_id}/{anio}', [InventarioController::class, 'show'])
             ->where(['bien_id' => '[0-9]{1,10}', 'anio' => '-?[0-9]{1,10}']);
         Route::get('/movimientos/opciones', [MovimientoController::class, 'opciones']);
+        Route::get('/movimientos/bienes', [MovimientoController::class, 'bienes']);
         Route::post('/movimientos', [MovimientoController::class, 'store']);
         Route::get('/movimientos/{id}', [MovimientoController::class, 'show'])
             ->where('id', '[0-9]{1,10}');

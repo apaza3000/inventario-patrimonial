@@ -1756,6 +1756,54 @@ body.login-page {
     --ui-feedback-ease: cubic-bezier(.2, .7, .2, 1);
 }
 
+[data-movements-root] [data-bien-pager],
+[data-maintenance-root] .maintenance-picker > .catalog-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+[data-movements-root] .movement-process {
+    margin: 12px 0 0;
+    padding-left: 22px;
+    line-height: 1.6;
+}
+[data-movements-root] .movement-process li + li { margin-top: 6px; }
+[data-movements-root] [data-selected-bien] { overflow-wrap: anywhere; }
+
+/* In-flow suggestions stay inside a modal's scroll area and cannot cover form fields. */
+:is([data-movements-root], [data-maintenance-root]) .bien-search { min-width: 0; }
+:is([data-movements-root], [data-maintenance-root]) .bien-search-list {
+    max-height: min(36dvh, 320px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin-top: 6px;
+    padding: 5px;
+    border: 1px solid #c8d6ba;
+    border-radius: 12px;
+    background: #fffdf9;
+    box-shadow: 0 5px 15px rgba(59, 54, 43, .1);
+}
+:is([data-movements-root], [data-maintenance-root]) :is(.bien-search-list, [data-bien-internal])[hidden] { display: none !important; }
+.bien-search-option {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 11px;
+    border-radius: 8px;
+    color: var(--oscuro);
+    font-size: 14px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+    transition: background-color 150ms ease;
+}
+.bien-search-option small { color: #585d4d; }
+.bien-search-option[aria-selected="true"] { background: #f5e8c9; outline: 2px solid var(--verde); outline-offset: -2px; }
+@media (hover: hover) { .bien-search-option:hover { background: #f5e8c9; } }
+@media (prefers-reduced-motion: reduce) { .bien-search-option { transition: none; } }
+
 :where(.app-body, .login-page) :where(button, a[href]):not(:disabled):not([aria-disabled="true"]) {
     transition-property: background-color, border-color, color, box-shadow, transform, opacity;
     transition-duration: var(--ui-feedback-duration);

@@ -39,7 +39,7 @@ class MantenimientosPageTest extends TestCase
     {
         foreach (['superadmin', 'administrador', 'director'] as $role) {
             $this->actingAs($this->user($role), 'web')->get('/mantenimientos')->assertOk()
-                ->assertSee('Registro de Mantenimientos')->assertSee('La búsqueda se limita a la página visible')
+                ->assertSee('Registro de Mantenimientos')->assertSee('Consulta de todos los registros autorizados')
                 ->assertSee('href="'.route('mantenimientos.create').'"', false)
                 ->assertSee('data-maintenance-form', false)->assertSee('data-maintenance-delete-form', false)
                 ->assertSee('data-maintenance-detail-dialog', false)->assertSee('Sin asignar')
@@ -78,14 +78,18 @@ class MantenimientosPageTest extends TestCase
         $this->actingAs($this->user('superadmin', false), 'web')->get('/mantenimientos/registrar')->assertForbidden();
         foreach (['superadmin', 'administrador', 'director'] as $role) {
             $response = $this->actingAs($this->user($role), 'web')->get('/mantenimientos/registrar')->assertOk()
-                ->assertSee('data-maintenance-form-page', false)->assertSee('data-bien-search-button', false)
+                ->assertSee('data-maintenance-form-page', false)->assertSee('data-bien-suggestions', false)
+                ->assertSee('role="combobox" aria-autocomplete="list"', false)
+                ->assertSee('aria-controls="maintenance-bien-suggestions" aria-required="true"', false)
+                ->assertSee('data-bien-options data-bien-internal hidden', false)
+                ->assertDontSee('data-bien-search-button', false)
                 ->assertSee('data-bien-technical-fields', false)->assertSee('Mantener la condición actual')
-                ->assertSee('Sin asignar')->assertDontSee('data-maintenance-form-dialog', false)->assertDontSee('data-bien-next', false)
+                ->assertSee('Sin asignar')->assertDontSee('data-maintenance-form-dialog', false)->assertSee('data-bien-next', false)
                 ->assertSee('data-global-detail-root', false)
                 ->assertSee('href="'.route('mantenimientos.index').'" class="maintenance-breadcrumb-link">Mantenimiento</a>', false)
                 ->assertSee('href="'.route('mantenimientos.index').'" class="catalog-secondary-button" data-cancel-registration>Cancelar</a>', false)
                 ->assertSee('href="'.route('mantenimientos.index').'" class="menu-item active"', false);
-            foreach (['Bien', 'Seleccionar bien', 'Tipo de mantenimiento', 'Fecha de mantenimiento', 'Descripción del mantenimiento'] as $label) {
+            foreach (['Bien', 'Tipo de mantenimiento', 'Fecha de mantenimiento', 'Descripción del mantenimiento'] as $label) {
                 $response->assertSee('<span class="maintenance-field-label">'.$label.' <span aria-hidden="true">*</span></span>', false);
             }
         }

@@ -6,6 +6,8 @@
 @endphp
 <div class="catalog-page" data-movements-root
     data-movements-url="{{ url('/api/movimientos') }}"
+    data-environments-url="{{ url('/api/ambientes') }}"
+    data-bien-search-url="{{ url('/api/movimientos/bienes') }}"
     data-options-url="{{ url('/api/movimientos/opciones') }}"
     data-csrf-url="{{ url('/sanctum/csrf-cookie') }}"
     data-login-url="{{ route('login') }}">
@@ -16,6 +18,7 @@
             <button type="button" class="catalog-primary-button" data-new-movement>Registrar movimiento</button>
         </header>
         <p class="movement-flow-note">El registro genera una constancia pendiente de firma. La ubicación del bien cambia únicamente al subir el PDF firmado y finalizar el movimiento.</p>
+        <details class="movement-flow-note"><summary>Cómo completar un traslado</summary><ol class="movement-process"><li>Selecciona el bien y comprueba su origen; indica destino y responsables.</li><li>Registra el movimiento y conserva su ID.</li><li>Descarga el PDF pendiente de firma desde el detalle.</li><li>Obtén la firma de quien ordena el traslado.</li><li>Abre ese mismo movimiento y sube el PDF firmado.</li><li>Si la carga se completa y el destino sigue activo, se finaliza el movimiento y se actualiza la ubicación.</li></ol></details>
         <p class="catalog-message" data-movement-notice role="status" aria-live="polite"></p>
         @unless ($canList)
         <details class="catalog-filters movement-lookup-secondary">
@@ -29,8 +32,15 @@
         @endunless
         @if ($canList)
             <section class="catalog-filters" aria-labelledby="movement-search-title">
-                <div class="catalog-section-heading"><h2 id="movement-search-title">Buscar movimientos</h2><span>La búsqueda se limita a la página visible</span></div>
-                <div class="catalog-filter-grid"><label>ID, CBI, descripción o ambiente en esta página<input type="search" data-movements-search placeholder="Buscar en esta página" disabled></label></div>
+                <div class="catalog-section-heading"><h2 id="movement-search-title">Buscar movimientos</h2><span>Consulta de todos los movimientos autorizados</span></div>
+                <div class="catalog-filter-grid">
+                    <label>ID, CBI, serie, descripción o ambiente<input type="search" maxlength="150" data-movements-search></label>
+                    <label>Bien ID<input type="number" min="1" step="1" data-movements-filter-bien_id></label>
+                    <label>Desde<input type="date" data-movements-filter-desde></label><label>Hasta<input type="date" data-movements-filter-hasta></label>
+                    <label>Origen<select data-movements-filter-ambiente_origen_id disabled><option value="">Todos los ambientes</option></select></label>
+                    <label>Destino<select data-movements-filter-ambiente_destino_id disabled><option value="">Todos los ambientes</option></select></label>
+                    <label>Estado<select data-movements-filter-estado><option value="">Todos</option><option value="pendiente_firma">Pendiente de firma</option><option value="finalizado">Finalizado</option></select></label>
+                </div><button type="button" class="catalog-secondary-button" data-movements-clear>Limpiar filtros</button>
                 <p class="catalog-search-summary" data-movements-summary aria-live="polite"></p>
             </section>
             <section class="catalog-results" aria-labelledby="movement-list-title" data-movements-list>
@@ -52,10 +62,14 @@
             <p class="catalog-form-message" data-form-message role="alert"></p>
             <button type="button" class="catalog-retry-button" data-options-retry hidden>Actualizar opciones</button>
             <div class="catalog-form-grid">
-                <label class="catalog-form-wide">Buscar bien por CBI<input type="search" data-bien-search placeholder="Escribe el CBI, incluidos sus ceros iniciales" aria-describedby="movement-bien-search-help movement-bien-search-summary" disabled></label>
-                <p id="movement-bien-search-help" class="catalog-subtitle catalog-form-wide">La búsqueda incluye todos los bienes recibidos, sin limitarse a una página. Selecciona el bien para confirmar.</p>
+                <div class="bien-search catalog-form-wide">
+                    <label><span class="movement-field-label">Bien <span aria-hidden="true">*</span></span><input type="search" maxlength="150" data-bien-search placeholder="CBI, descripción o serie" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="movement-bien-suggestions" aria-required="true" autocomplete="off" aria-describedby="movement-bien-search-help movement-bien-search-summary" disabled></label>
+                    <div id="movement-bien-suggestions" class="bien-search-list" data-bien-suggestions role="listbox" aria-label="Bienes encontrados" hidden></div>
+                </div>
+                <p id="movement-bien-search-help" class="catalog-subtitle catalog-form-wide">Busca desde 2 caracteres por CBI, serie o descripción y selecciona una coincidencia. Se conservan los ceros iniciales.</p>
                 <p id="movement-bien-search-summary" class="catalog-search-summary catalog-form-wide" data-bien-search-summary aria-live="polite"></p>
-                <label class="catalog-form-wide"><span class="movement-field-label">Bien <span aria-hidden="true">*</span></span><select name="bien_id" required><option value="">Selecciona un bien</option></select></label>
+                <select name="bien_id" data-bien-internal hidden aria-hidden="true" tabindex="-1"><option value="">Selecciona un bien</option></select>
+                <div class="catalog-form-wide" data-bien-pager><button type="button" class="catalog-secondary-button" data-bien-previous disabled>Anterior</button> <span data-bien-page></span> <button type="button" class="catalog-secondary-button" data-bien-next disabled>Siguiente</button> <button type="button" class="catalog-secondary-button" data-bien-clear>Limpiar selección</button></div>
                 <p class="catalog-subtitle catalog-form-wide" data-selected-bien aria-live="polite"></p>
                 <label>Origen según ubicación actual<input type="text" data-origin-label readonly value="—"></label>
                 <label><span class="movement-field-label">Destino <span aria-hidden="true">*</span></span><select name="ambiente_destino_id" required><option value="">Selecciona un destino</option></select></label>
